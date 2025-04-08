@@ -1,24 +1,13 @@
-import { useState } from 'react';
+import React from 'react';
 import { useUnit } from 'effector-react';
-import { $board, selectPiece, switchMainStateScreen } from '../store/mainStore';
-import { Piece } from './Piece';
-
-const recolorSelectedPlace = (
-  rowIndex: number, 
-  colIndex: number, 
-  selectedCell: { row: number, col: number } | null
-) => {
-  if (selectedCell) {
-    const prevCell = document.getElementById(`${selectedCell.row}-${selectedCell.col}`);
-    if (prevCell) prevCell.style.backgroundColor = '#F6D7B0';
-  }
-  const cell = document.getElementById(`${rowIndex}-${colIndex}`);
-  if (cell) cell.style.backgroundColor = '#FF0000';
-};
+import { $board, $selectedPiece } from '../../store/game';
+import { switchMainStateScreen } from '../../store/screens';
+import { selectPiece } from '../../store/game';
+import { CellProps } from '../../store/game.types';
+import { GamePiece } from '../Piece/Piece';
 
 export const Board = () => {
   const board = useUnit($board);
-  const [selectedCell, setSelectedCell] = useState<{ row: number, col: number } | null>(null);
 
   return (
     <div className="flex justify-center items-center h-screen gap-16">
@@ -37,25 +26,20 @@ export const Board = () => {
       <div className="grid grid-cols-9 border-2 border-orange-900">
         {board.map((row, rowIndex) =>
           row.map((cell, colIndex) => (
-            <div
-              key={`${rowIndex}-${colIndex}`}
-              id={`${rowIndex}-${colIndex}`}
-              className={`
-                w-20 h-20 
-                flex items-center justify-center 
-                bg-orange-200 border-2 border-orange-900
-              `}
-            >
-              <Piece
-                type={cell}
-                position={{ row: rowIndex, col: colIndex }}
-                onClick={() => {
-                  selectPiece( { row: rowIndex, col: colIndex} );
-                  recolorSelectedPlace(rowIndex, colIndex, selectedCell);
-                  setSelectedCell({ row: rowIndex, col: colIndex });
-                }}
-              />
-            </div>
+            <Cell row={rowIndex}
+                  col={colIndex}
+                  piece={
+                    cell === 'Empty' ? null
+                    : <GamePiece
+                        type={cell}
+                        position={{ row: rowIndex, col: colIndex }}
+                        promoted={false}
+                        onClick={() => {
+                          selectPiece( { row: rowIndex, col: colIndex } );
+                        }}
+                    />
+                  }>
+            </Cell>
           ))
         )}
       </div>
@@ -92,3 +76,21 @@ export const Board = () => {
     </div>
   );
 };
+
+const Cell = React.memo(({ row, col, piece }: CellProps) => {
+  const selectedPiece = useUnit($selectedPiece);
+  return (
+    <div key={`${row}-${col}`}
+          id={`${row}-${col}`}
+          className={`
+            w-20 h-20 flex items-center justify-center 
+            ${selectedPiece && 
+              selectedPiece.row === row && 
+              selectedPiece.col === col ? 'bg-red-500' 
+              : 'bg-orange-200'} 
+            border-2 border-orange-900
+          `}>
+      {piece}
+    </div>
+  );
+});

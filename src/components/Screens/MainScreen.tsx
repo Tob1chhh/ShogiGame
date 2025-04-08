@@ -1,4 +1,4 @@
-import { switchMainStateScreen } from '../store/mainStore';
+import { switchMainStateScreen } from '../../store/screens';
 
 export const MainScreen = () => {
   return (

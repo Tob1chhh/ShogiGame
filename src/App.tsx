@@ -1,8 +1,8 @@
 import { useUnit } from "effector-react";
-import { Board } from "./components/Board";
-import { MainScreen } from "./components/MainScreen";
-import { ModeSelectionScreen } from "./components/ModeSelectionScreen";
-import { mainStateScreen } from "./store/mainStore";
+import { Board } from "./components/Board/Board";
+import { MainScreen } from "./components/Screens/MainScreen";
+import { ModeSelectionScreen } from "./components/Screens/ModeSelectionScreen";
+import { mainStateScreen } from "./store/screens";
 
 const App = () => {
   const currentScreen = useUnit(mainStateScreen);

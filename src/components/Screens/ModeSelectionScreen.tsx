@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { switchMainStateScreen } from '../store/mainStore';
+import { switchMainStateScreen } from '../../store/screens';
 
 export const ModeSelectionScreen = () => {
   // Состояния для выбора режимов
