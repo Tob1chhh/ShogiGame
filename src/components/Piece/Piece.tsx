@@ -1,10 +1,9 @@
 import { pieces } from '../../models/pieces';
 import { Piece } from '../../store/game.types';
 
-const getPieceIcon = (type: string) => pieces[type] || '';
+const getPieceIcon = (type: string, color: string) => pieces[color + '_' + type] || '';
 
-
-export const GamePiece = ({ type, onClick }: Piece) => {
+export const GamePiece = ({ type, color, onClick }: Piece) => {
   return (
     <button className="w-full h-full flex 
                         items-center justify-center 
@@ -13,8 +12,8 @@ export const GamePiece = ({ type, onClick }: Piece) => {
             onClick={onClick}
     >
       {
-        getPieceIcon(type) !== '' 
-          ? <img src={`${getPieceIcon(type)}`} alt="#" className="w-14 h-14" /> 
+        getPieceIcon(type, color) !== '' 
+          ? <img src={`${getPieceIcon(type, color)}`} alt="#" className="w-14 h-14" /> 
           : ''
       }
     </button>

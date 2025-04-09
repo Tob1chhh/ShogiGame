@@ -24,18 +24,19 @@ export const Board = () => {
 
       {/* Игровая доска */}
       <div className="grid grid-cols-9 border-2 border-orange-900">
-        {board.map((row, rowIndex) =>
-          row.map((cell, colIndex) => (
-            <Cell row={rowIndex}
-                  col={colIndex}
+        {board.map((row, rowIndex) => 
+          row.map((piece, colIndex) => (
+            <Cell row={piece ? piece.position.row : rowIndex}
+                  col={piece ? piece.position.col : colIndex}
                   piece={
-                    cell === 'Empty' ? null
+                    piece === null ? null
                     : <GamePiece
-                        type={cell}
-                        position={{ row: rowIndex, col: colIndex }}
+                        type={piece.type}
+                        color={piece.color}
+                        position={piece.position}
                         promoted={false}
                         onClick={() => {
-                          selectPiece( { row: rowIndex, col: colIndex } );
+                          selectPiece( { row: piece.position.row, col: piece.position.col } );
                         }}
                     />
                   }>

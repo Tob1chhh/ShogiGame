@@ -1,6 +1,6 @@
 import * as pieces_all from "../assets/";
 
-export const pieces: Record<string, string> = {
+export const pieces: Record<string, string | null> = {
   Gote_Lance: pieces_all.Gote_Lance,
   Gote_Horse_Knight: pieces_all.Gote_Horse_Knight,
   Gote_Silver: pieces_all.Gote_Silver,
@@ -17,5 +17,5 @@ export const pieces: Record<string, string> = {
   Sente_Rook: pieces_all.Sente_Rook,
   Sente_Bishop: pieces_all.Sente_Bishop,
   Sente_Pawn: pieces_all.Sente_Pawn,
-  Empty: '',
+  Empty: null,
 }

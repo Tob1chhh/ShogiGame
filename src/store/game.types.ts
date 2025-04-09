@@ -13,13 +13,14 @@ export interface CellProps {
 
 export interface Piece {
   type: string;
+  color: string;
   position: Coordinates;
   promoted: boolean;
   onClick: () => void;
 }
 
 export interface GameState {
-  board: string[][];
+  board: Array<Array<Piece | null>>;
   currentPlayer: 'player1' | 'player2';
   selectedPiece: Coordinates | null;
   availableMoves: Coordinates[];
