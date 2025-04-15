@@ -17,5 +17,20 @@ export const pieces: Record<string, string | null> = {
   Sente_Rook: pieces_all.Sente_Rook,
   Sente_Bishop: pieces_all.Sente_Bishop,
   Sente_Pawn: pieces_all.Sente_Pawn,
+
+  Gote_Pawn_Reverse: pieces_all.Gote_Pawn_Reverse,
+  Gote_Lance_Reverse: pieces_all.Gote_Lance_Reverse,
+  Gote_Horse_Knight_Reverse: pieces_all.Gote_Horse_Knight_Reverse,
+  Gote_Silver_Reverse: pieces_all.Gote_Silver_Reverse,
+  Gote_Rook_Reverse: pieces_all.Gote_Rook_Reverse,
+  Gote_Bishop_Reverse: pieces_all.Gote_Bishop_Reverse,
+
+  Sente_Pawn_Reverse: pieces_all.Sente_Pawn_Reverse,
+  Sente_Lance_Reverse: pieces_all.Sente_Lance_Reverse,
+  Sente_Horse_Knight_Reverse: pieces_all.Sente_Horse_Knight_Reverse,
+  Sente_Silver_Reverse: pieces_all.Sente_Silver_Reverse,
+  Sente_Rook_Reverse: pieces_all.Sente_Rook_Reverse,
+  Sente_Bishop_Reverse: pieces_all.Sente_Bishop_Reverse,
+
   Empty: null,
 }
