@@ -1,6 +1,6 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import { $board, $selectedPiece } from '../../store/game';
+import { $availableMoves, $board, $gameState, $selectedPiece } from '../../store/game';
 import { switchMainStateScreen } from '../../store/screens';
 import { selectPiece } from '../../store/game';
 import { CellProps } from '../../store/game.types';
@@ -8,6 +8,10 @@ import { GamePiece } from '../Piece/Piece';
 
 export const Board = () => {
   const board = useUnit($board);
+  const availableMoves = useUnit($availableMoves);
+
+  const game = useUnit($gameState);
+  console.log(game);
 
   return (
     <div className="flex justify-center items-center h-screen gap-16">
@@ -28,15 +32,16 @@ export const Board = () => {
           row.map((piece, colIndex) => (
             <Cell row={piece ? piece.position.row : rowIndex}
                   col={piece ? piece.position.col : colIndex}
+                  isHighlighted={availableMoves.some(m => m.row === rowIndex && m.col === colIndex)}
                   piece={
                     piece === null ? null
                     : <GamePiece
                         type={piece.type}
                         color={piece.color}
                         position={piece.position}
-                        promoted={false}
+                        promoted={piece.promoted}
                         onClick={() => {
-                          selectPiece( { row: piece.position.row, col: piece.position.col } );
+                          selectPiece(piece);
                         }}
                     />
                   }>
@@ -78,7 +83,7 @@ export const Board = () => {
   );
 };
 
-const Cell = React.memo(({ row, col, piece }: CellProps) => {
+const Cell = React.memo(({ row, col, isHighlighted, piece }: CellProps) => {
   const selectedPiece = useUnit($selectedPiece);
   return (
     <div key={`${row}-${col}`}
@@ -88,7 +93,7 @@ const Cell = React.memo(({ row, col, piece }: CellProps) => {
             ${selectedPiece && 
               selectedPiece.row === row && 
               selectedPiece.col === col ? 'bg-red-500' 
-              : 'bg-orange-200'} 
+              : isHighlighted ? 'bg-green-500' : 'bg-orange-200'} 
             border-2 border-orange-900
           `}>
       {piece}

@@ -1,5 +1,6 @@
-import { createStore, createEvent } from 'effector';
+import { createStore, createEvent, sample } from 'effector';
 import { Coordinates, GameState, Piece } from './game.types';
+import { calculateAvailableMoves } from '../services/calculateMoves';
 
 // Начальное состояние доски
 const initialBoard: Piece[][] = [
@@ -27,8 +28,14 @@ const initialBoard: Piece[][] = [
     { type: 'Pawn', color: 'Gote', position: {row: 2, col: 7}, promoted: false },
     { type: 'Pawn', color: 'Gote', position: {row: 2, col: 8}, promoted: false } ],
   Array(9).fill(null),
+  // Array(9).fill(null),
+  // Array(9).fill(null),
   Array(9).fill(null),
+  // [null, null, null, null, { type: 'King', color: 'Sente', position: {row: 4, col: 4}, promoted: false }, null, null, null, null],
   Array(9).fill(null),
+  // Array(9).fill(null),
+  // Array(9).fill(null),
+  // Array(9).fill(null),
   [ { type: 'Pawn', color: 'Sente', position: {row: 6, col: 0}, promoted: false }, 
     { type: 'Pawn', color: 'Sente', position: {row: 6, col: 1}, promoted: false },
     { type: 'Pawn', color: 'Sente', position: {row: 6, col: 2}, promoted: false },
@@ -54,10 +61,22 @@ const initialBoard: Piece[][] = [
     { type: 'Lance',        color: 'Sente', position: {row: 8, col: 8}, promoted: false } ],
 ];
 
+/* 
+  [null, null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null, null, null],
+*/
+
 // Основное состояние игры
 export const $gameState = createStore<GameState>({
   board: initialBoard,
-  currentPlayer: 'player1',
+  currentPlayer: 'Sente',
   selectedPiece: null,
   availableMoves: [],
   capturedPieces: {
@@ -74,12 +93,33 @@ export const $availableMoves = $gameState.map(state => state.availableMoves);
 export const $capturedPieces = $gameState.map(state => state.capturedPieces);
 
 // События
-export const selectPiece = createEvent<Coordinates>();                              // Выбор фигуры
+export const selectPiece = createEvent<Piece>();                                    // Выбор фигуры
 export const movePiece = createEvent<{ from: Coordinates; to: Coordinates }>();     // Перемещение фигуры
 
 $gameState
-  .on(selectPiece, (state, coords) => ({
+  .on(selectPiece, (state, piece) => ({
     ...state,
-    selectedPiece: coords,
-    availableMoves: [],
+    selectedPiece: piece.position,
+    availableMoves: calculateAvailableMoves(piece, state.board),
   }));
+
+// Логика перемещения фигуры
+// sample({
+//   source: { board: $board, selected: $selectedPiece, moves: $availableMoves },
+//   clock: movePiece,
+//   filter: (_: any, targetPos: { row: number; col: number; }) => $availableMoves.getState().some(m => m.row === targetPos.row && m.col === targetPos.col),
+//   fn: ({ board, selected }: any, targetPos: { row: number; col: number; }) => {
+//     if (!selected) return board;
+    
+//     const newBoard = [...board];
+//     const piece = newBoard[selected.row][selected.col];
+    
+//     if (piece) {
+//       newBoard[targetPos.row][targetPos.col] = piece;
+//       newBoard[selected.row][selected.col] = null;
+//     }
+    
+//     return newBoard;
+//   },
+//   target: $board
+// });
