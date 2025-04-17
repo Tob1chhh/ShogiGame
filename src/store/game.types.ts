@@ -24,7 +24,7 @@ export type PieceType = 'Pawn'
 
 export interface Piece {
   type: PieceType;
-  color: string;
+  color: 'Sente' | 'Gote';
   position: Coordinates;
   promoted: boolean;
   onClick: () => void;
@@ -44,5 +44,11 @@ export interface GameState {
 export interface Move {
   from: Coordinates;
   to: Coordinates;
+  selectedPiece: Piece | null;
   promotes?: boolean;
+}
+
+export interface PromotionModalState {
+  isOpen: boolean;
+  response?: (response: boolean) => void;
 }
