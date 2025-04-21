@@ -1,6 +1,6 @@
-import { createStore, createEvent, sample } from 'effector';
-import { Coordinates, GameState, Piece } from './game.types';
-import { calculateAvailableMoves } from '../services/calculateMoves';
+import { createStore, createEvent } from 'effector';
+import { GameState, Move, Piece, PromotionModalState } from './game.types';
+import { calculateAvailableMoves, calculateAvailableResets } from '../services/calculateMoves';
 
 // Начальное состояние доски
 const initialBoard: Piece[][] = [
@@ -31,7 +31,7 @@ const initialBoard: Piece[][] = [
   // Array(9).fill(null),
   // Array(9).fill(null),
   Array(9).fill(null),
-  // [null, null, null, null, { type: 'King', color: 'Sente', position: {row: 4, col: 4}, promoted: false }, null, null, null, null],
+  // [null, null, null, null, { type: 'Rook', color: 'Sente', position: {row: 4, col: 4}, promoted: false }, null, null, null, null],
   Array(9).fill(null),
   // Array(9).fill(null),
   // Array(9).fill(null),
@@ -61,18 +61,6 @@ const initialBoard: Piece[][] = [
     { type: 'Lance',        color: 'Sente', position: {row: 8, col: 8}, promoted: false } ],
 ];
 
-/* 
-  [null, null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null, null],
-*/
-
 // Основное состояние игры
 export const $gameState = createStore<GameState>({
   board: initialBoard,
@@ -80,8 +68,8 @@ export const $gameState = createStore<GameState>({
   selectedPiece: null,
   availableMoves: [],
   capturedPieces: {
-    player1: [],
-    player2: [],
+    Sente: [],
+    Gote: [],
   }
 });
 
@@ -93,33 +81,67 @@ export const $availableMoves = $gameState.map(state => state.availableMoves);
 export const $capturedPieces = $gameState.map(state => state.capturedPieces);
 
 // События
-export const selectPiece = createEvent<Piece>();                                    // Выбор фигуры
-export const movePiece = createEvent<{ from: Coordinates; to: Coordinates }>();     // Перемещение фигуры
+export const selectPiece = createEvent<Piece>();            // Выбор фигуры
+export const movePiece = createEvent<Move>();               // Перемещение фигуры
 
+/* 
+  TODO: узнать о правилах сброса и реализовать данную функцию (calculateAvailableResets)
+  TODO: реализовать "шах и мат" для данной игры
+*/
+export const selectCapturedPiece = createEvent<Piece>();    // Выбор захваченной фигуры
+
+// Обработка событий
 $gameState
   .on(selectPiece, (state, piece) => ({
     ...state,
     selectedPiece: piece.position,
     availableMoves: calculateAvailableMoves(piece, state.board),
+  }))
+  .on(movePiece, (state, move) => {
+    const updatedBoard: (Piece | null)[][] = [...state.board];
+    let capturedPiece: Piece | null = null;
+    if (move.selectedPiece) {
+      if (move.promotes) {
+        move.selectedPiece.promoted = true;
+      }
+      if (updatedBoard[move.to.row][move.to.col] !== null) {
+        capturedPiece = updatedBoard[move.to.row][move.to.col];
+        if (capturedPiece) {
+          capturedPiece.promoted = false;
+          capturedPiece.color === 'Sente' 
+            ? capturedPiece.color = 'Gote' 
+            : capturedPiece.color = 'Sente';
+        }
+        state.currentPlayer === 'Sente' 
+          ? state.capturedPieces.Sente.push(capturedPiece!) 
+          : state.capturedPieces.Gote.push(capturedPiece!);
+      }
+      updatedBoard[move.to.row][move.to.col] = move.selectedPiece;
+      move.selectedPiece.position = { row: move.to.row, col: move.to.col };
+      updatedBoard[move.from.row][move.from.col] = null;
+    }
+    
+    return {
+      ...state,
+      board: updatedBoard,
+      currentPlayer: state.currentPlayer === 'Sente' ? 'Gote' : 'Sente',
+      selectedPiece: null,
+      availableMoves: [],
+    }
+  })
+  .on(selectCapturedPiece, (state, piece) => ({
+    ...state,
+    selectedPiece: piece.position,
+    availableMoves: calculateAvailableResets(piece, state.board),
   }));
 
-// Логика перемещения фигуры
-// sample({
-//   source: { board: $board, selected: $selectedPiece, moves: $availableMoves },
-//   clock: movePiece,
-//   filter: (_: any, targetPos: { row: number; col: number; }) => $availableMoves.getState().some(m => m.row === targetPos.row && m.col === targetPos.col),
-//   fn: ({ board, selected }: any, targetPos: { row: number; col: number; }) => {
-//     if (!selected) return board;
-    
-//     const newBoard = [...board];
-//     const piece = newBoard[selected.row][selected.col];
-    
-//     if (piece) {
-//       newBoard[targetPos.row][targetPos.col] = piece;
-//       newBoard[selected.row][selected.col] = null;
-//     }
-    
-//     return newBoard;
-//   },
-//   target: $board
-// });
+// Открытие модального окна переворота фигуры
+export const $promotionModal = createStore<PromotionModalState>({ isOpen: false });
+export const askPromotion = createEvent<{ response: (answer: boolean) => void; }>();
+export const promotionAnswer = createEvent<boolean>();
+$promotionModal
+  .on(askPromotion, (_, { response }) => ({ isOpen: true, response }))
+  .on(promotionAnswer, (state, answer) => {
+    state.response?.(answer);
+    return { isOpen: false, response: undefined };
+  });

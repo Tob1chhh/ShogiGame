@@ -1,7 +1,8 @@
+import { askPromotion } from '../store/game';
 import { Piece, Coordinates } from '../store/game.types';
 
 // Проверка наличия фигуры на клетке игрового поля
-const getPiece = (board: (Piece | null)[][], coords: Coordinates): boolean => {
+export const getPiece = (board: (Piece | null)[][], coords: Coordinates): boolean => {
   if (board[coords.row][coords.col] !== null) return true;
   return false;
 }
@@ -63,7 +64,7 @@ const getBasicMoves = (piece: Piece, board: (Piece | null)[][]): Coordinates[] =
       // Обычная пешка
       if (!promoted) {
         const newRow = row + direction;
-        if (isValidPosition(newRow, col) && !board[newRow][col]) {
+        if (isValidPosition(newRow, col)) {
           moves.push({ row: newRow, col: col });
         }
       } 
@@ -193,19 +194,34 @@ export const calculateAvailableMoves = (
   board: (Piece | null)[][]
 ): Coordinates[] => {
   if (!piece) return [];
-  
   const basicMoves = getBasicMoves(piece, board);
-  // const promotionMoves: Coordinates[] = [];
-  
-  // Проверка возможности превращения
-  // const shouldPromote = (piece.color === 'Gote' && piece.position.row >= 6) || 
-  //                       (piece.color === 'Sente' && piece.position.row <= 2);
-  
-  // if (shouldPromote && !piece.promoted && piece.type !== 'Gold' && piece.type !== 'King') {
-  //   basicMoves.forEach(move => {
-  //     promotionMoves.push({ ...move, promotes: true });
-  //   });
-  // }
-
-  return [...basicMoves]; //, ...promotionMoves
+  return [...basicMoves]; 
 };
+
+// Функция для проверки возможности переворота фигуры
+export const shouldPromote = (selectedPiece: Piece | null, toPosition: Coordinates): boolean => {
+  if (selectedPiece) {
+    const promote = (selectedPiece.color === 'Gote' && toPosition.row >= 6) || 
+                    (selectedPiece.color === 'Sente' && toPosition.row <= 2);
+    if (promote && !selectedPiece.promoted 
+        && selectedPiece.type !== 'Gold' 
+        && selectedPiece.type !== 'King') {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Функция-хэлпер для удобной проверки ответа модального окна переворота фигуры
+export const promptPromotion = (): Promise<boolean> => {
+  return new Promise((response) => {
+    askPromotion({ response });
+  });
+};
+
+export const calculateAvailableResets = (
+  piece: Piece | null,
+  board: (Piece | null)[][]
+): Coordinates[] => {
+  return [];
+}
