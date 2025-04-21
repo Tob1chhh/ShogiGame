@@ -1,6 +1,6 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import { $availableMoves, $board, $currentPlayer, $gameState, $selectedPiece, movePiece } from '../../store/game';
+import { $availableMoves, $board, $capturedPieces, $currentPlayer, $gameState, $selectedPiece, movePiece, selectCapturedPiece } from '../../store/game';
 import { switchMainStateScreen } from '../../store/screens';
 import { selectPiece } from '../../store/game';
 import { CellProps, Move } from '../../store/game.types';
@@ -12,9 +12,10 @@ export const Board = () => {
   const board = useUnit($board);
   const availableMoves = useUnit($availableMoves);
   const currentPlayer = useUnit($currentPlayer);
+  const capturedPieces = useUnit($capturedPieces);
 
-  // const game = useUnit($gameState);
-  // console.log(game);
+  const game = useUnit($gameState);
+  console.log(game);
 
   const Cell = React.memo(({ row, col, isHighlighted, piece }: CellProps) => {
     const selectedPiece = useUnit($selectedPiece);
@@ -58,11 +59,25 @@ export const Board = () => {
 
       {/* Левая панель с руками игроков */}
       <div className="flex flex-col justify-between h-[540px]">
-        <div className="w-60 h-32 bg-white border-2 border-gray-400 rounded-md flex items-center justify-center shadow-md">
-          <span className="text-gray-500">Рука игрока 1</span>
+        <div className="w-80 h-48 bg-white border-2 border-gray-400 rounded-md flex items-center justify-center shadow-md player_hand">
+          {capturedPieces.Gote.map((piece) => (
+            <GamePiece type={piece.type}
+                       color={piece.color}
+                       position={piece.position}
+                       promoted={piece.promoted}
+                       onClick={() => { if (piece.color === currentPlayer) selectCapturedPiece(piece) }}
+            />
+          ))}
         </div>
-        <div className="w-60 h-32 bg-white border-2 border-gray-400 rounded-md flex items-center justify-center shadow-md">
-          <span className="text-gray-500">Рука игрока 2</span>
+        <div className="w-80 h-48 bg-white border-2 border-gray-400 rounded-md flex items-center justify-center shadow-md player_hand">
+        {capturedPieces.Sente.map((piece) => (
+            <GamePiece type={piece.type}
+                       color={piece.color}
+                       position={piece.position}
+                       promoted={piece.promoted}
+                       onClick={() => { if (piece.color === currentPlayer) selectCapturedPiece(piece) }}
+            />
+          ))}
         </div>
       </div>
 
@@ -80,10 +95,8 @@ export const Board = () => {
                         color={piece.color}
                         position={piece.position}
                         promoted={piece.promoted}
-                        onClick={() => {
-                          if (piece.color === currentPlayer) selectPiece(piece);
-                        }}
-                    />
+                        onClick={() => { if (piece.color === currentPlayer) selectPiece(piece) }}
+                      />
                   }>
             </Cell>
           ))

@@ -36,8 +36,8 @@ export interface GameState {
   selectedPiece: Coordinates | null;
   availableMoves: Coordinates[];
   capturedPieces: {
-    player1: Piece[];
-    player2: Piece[];
+    Sente: Piece[];
+    Gote: Piece[];
   };
 }
 

@@ -64,7 +64,7 @@ const getBasicMoves = (piece: Piece, board: (Piece | null)[][]): Coordinates[] =
       // Обычная пешка
       if (!promoted) {
         const newRow = row + direction;
-        if (isValidPosition(newRow, col) && !board[newRow][col]) {
+        if (isValidPosition(newRow, col)) {
           moves.push({ row: newRow, col: col });
         }
       } 
@@ -198,6 +198,7 @@ export const calculateAvailableMoves = (
   return [...basicMoves]; 
 };
 
+// Функция для проверки возможности переворота фигуры
 export const shouldPromote = (selectedPiece: Piece | null, toPosition: Coordinates): boolean => {
   if (selectedPiece) {
     const promote = (selectedPiece.color === 'Gote' && toPosition.row >= 6) || 
@@ -211,8 +212,16 @@ export const shouldPromote = (selectedPiece: Piece | null, toPosition: Coordinat
   return false;
 }
 
+// Функция-хэлпер для удобной проверки ответа модального окна переворота фигуры
 export const promptPromotion = (): Promise<boolean> => {
   return new Promise((response) => {
     askPromotion({ response });
   });
 };
+
+export const calculateAvailableResets = (
+  piece: Piece | null,
+  board: (Piece | null)[][]
+): Coordinates[] => {
+  return [];
+}
