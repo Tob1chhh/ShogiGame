@@ -34,6 +34,7 @@ export interface GameState {
   board: (Piece | null)[][];
   currentPlayer: 'Sente' | 'Gote';
   selectedPiece: Coordinates | null;
+  selectedHandPiece: Piece | null;
   availableMoves: Coordinates[];
   capturedPieces: {
     Sente: Piece[];
@@ -44,7 +45,8 @@ export interface GameState {
 export interface Move {
   from: Coordinates;
   to: Coordinates;
-  selectedPiece: Piece | null;
+  selectedPiece?: Piece | null;
+  selectedHandPiece?: Piece | null;
   promotes?: boolean;
 }
 

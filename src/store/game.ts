@@ -66,6 +66,7 @@ export const $gameState = createStore<GameState>({
   board: initialBoard,
   currentPlayer: 'Sente',
   selectedPiece: null,
+  selectedHandPiece: null,
   availableMoves: [],
   capturedPieces: {
     Sente: [],
@@ -77,6 +78,7 @@ export const $gameState = createStore<GameState>({
 export const $board = $gameState.map(state => state.board);
 export const $currentPlayer = $gameState.map(state => state.currentPlayer);
 export const $selectedPiece = $gameState.map(state => state.selectedPiece);
+export const $selectedHandPiece = $gameState.map(state => state.selectedHandPiece);
 export const $availableMoves = $gameState.map(state => state.availableMoves);
 export const $capturedPieces = $gameState.map(state => state.capturedPieces);
 
@@ -85,7 +87,7 @@ export const selectPiece = createEvent<Piece>();            // Выбор фиг
 export const movePiece = createEvent<Move>();               // Перемещение фигуры
 
 /* 
-  TODO: узнать о правилах сброса и реализовать данную функцию (calculateAvailableResets)
+  TODO: узнать о правилах сброса и реализовать данную функцию (calculateAvailableResets) (этап 1 - выполнен) (этап 2 - в calculateMoves.ts)
   TODO: реализовать "шах и мат" для данной игры
 */
 export const selectCapturedPiece = createEvent<Piece>();    // Выбор захваченной фигуры
@@ -95,6 +97,7 @@ $gameState
   .on(selectPiece, (state, piece) => ({
     ...state,
     selectedPiece: piece.position,
+    selectedHandPiece: null,
     availableMoves: calculateAvailableMoves(piece, state.board),
   }))
   .on(movePiece, (state, move) => {
@@ -119,6 +122,16 @@ $gameState
       updatedBoard[move.to.row][move.to.col] = move.selectedPiece;
       move.selectedPiece.position = { row: move.to.row, col: move.to.col };
       updatedBoard[move.from.row][move.from.col] = null;
+    } else if (move.selectedHandPiece) {
+      updatedBoard[move.to.row][move.to.col] = move.selectedHandPiece!;
+      move.selectedHandPiece!.position = { row: move.to.row, col: move.to.col };
+      if (state.currentPlayer === 'Sente') {
+        const resetPiece = state.capturedPieces.Sente.findIndex(piece => piece === move.selectedHandPiece);
+        state.capturedPieces.Sente.splice(resetPiece, 1);
+      } else {
+        const resetPiece = state.capturedPieces.Gote.findIndex(piece => piece === move.selectedHandPiece);
+        state.capturedPieces.Gote.splice(resetPiece, 1);
+      }
     }
     
     return {
@@ -126,12 +139,14 @@ $gameState
       board: updatedBoard,
       currentPlayer: state.currentPlayer === 'Sente' ? 'Gote' : 'Sente',
       selectedPiece: null,
+      selectedHandPiece: null,
       availableMoves: [],
     }
   })
   .on(selectCapturedPiece, (state, piece) => ({
     ...state,
-    selectedPiece: piece.position,
+    selectedPiece: null,
+    selectedHandPiece: piece,
     availableMoves: calculateAvailableResets(piece, state.board),
   }));
 

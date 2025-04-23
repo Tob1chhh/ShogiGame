@@ -1,6 +1,12 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import { $availableMoves, $board, $capturedPieces, $currentPlayer, $gameState, $selectedPiece, movePiece, selectCapturedPiece } from '../../store/game';
+import { 
+  $availableMoves, $board, 
+  $capturedPieces, $currentPlayer, 
+  $gameState, $selectedHandPiece, 
+  $selectedPiece, movePiece, 
+  selectCapturedPiece 
+} from '../../store/game';
 import { switchMainStateScreen } from '../../store/screens';
 import { selectPiece } from '../../store/game';
 import { CellProps, Move } from '../../store/game.types';
@@ -19,21 +25,35 @@ export const Board = () => {
 
   const Cell = React.memo(({ row, col, isHighlighted, piece }: CellProps) => {
     const selectedPiece = useUnit($selectedPiece);
+    const selectedHandPiece = useUnit($selectedHandPiece);
   
     const onClick = async () => {
-      if (isHighlighted && selectedPiece) {
-        const newMove: Move = {
-          from: { row: selectedPiece.row, col: selectedPiece.col },
-          to: { row: row, col: col },
-          selectedPiece: board[selectedPiece.row][selectedPiece.col],
-        }
-        if (shouldPromote(board[newMove.from.row][newMove.from.col], { row: newMove.to.row, col: newMove.to.col })) {
-          const shouldPromote = await promptPromotion();
-          if (shouldPromote) {
-            newMove.promotes = shouldPromote;
+      if (isHighlighted) {
+        let newMove: Move | null = null;
+        if (selectedPiece) {
+          newMove = {
+            from: { row: selectedPiece.row, col: selectedPiece.col },
+            to: { row: row, col: col },
+            selectedPiece: board[selectedPiece.row][selectedPiece.col],
+          }
+          if ((newMove.selectedPiece?.type === 'Pawn' 
+                || newMove.selectedPiece?.type === 'Lance' 
+                || newMove.selectedPiece?.type === 'Horse_Knight') 
+              && (row === 8 || row === 0)) newMove.promotes = true;
+          else if (shouldPromote(board[newMove.from.row][newMove.from.col], { row: newMove.to.row, col: newMove.to.col })) {
+            const shouldPromote = await promptPromotion();
+            if (shouldPromote) newMove.promotes = shouldPromote;
+          }
+        } else if (selectedHandPiece) {
+          newMove = {
+            from: { row: selectedHandPiece.position.row, col: selectedHandPiece.position.col },
+            to: { row: row, col: col },
+            selectedHandPiece: currentPlayer === 'Sente' 
+              ? capturedPieces.Sente.find(piece => piece === selectedHandPiece)
+              : capturedPieces.Gote.find(piece => piece === selectedHandPiece)
           }
         }
-        movePiece(newMove);
+        movePiece(newMove!);
       }
     }
   
@@ -104,7 +124,12 @@ export const Board = () => {
       </div>
 
       {/* Правая панель с кнопками */}
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-screen flex-col gap-8">
+        <div className="w-[90%] max-w-4xl pl-2 pr-2 pt-8 pb-8 bg-orange-100 border-8 border-orange-900 rounded-3xl shadow-2xl">
+          <div className="flex justify-center items-center w-full h-full">
+            <span className="text-center font-bold text-2xl">Ход стороны: "{currentPlayer}"</span>
+          </div>
+        </div>
         <div className="w-[90%] max-w-4xl p-12 bg-orange-100 border-8 border-orange-900 rounded-3xl shadow-2xl">
           <div className="flex flex-col justify-center items-center gap-8">
             <button className="w-56 h-12 bg-green-600 text-white font-bold rounded-md shadow-md 

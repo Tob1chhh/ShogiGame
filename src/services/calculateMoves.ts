@@ -219,9 +219,28 @@ export const promptPromotion = (): Promise<boolean> => {
   });
 };
 
+// Функция расчета возможных позиция для сброса фигуры из "руки"
 export const calculateAvailableResets = (
   piece: Piece | null,
   board: (Piece | null)[][]
 ): Coordinates[] => {
-  return [];
+  if (!piece) return [];
+  const emptyPlaces = board.map((row, rowIndex) => 
+    row.map((piece, colIndex) => (piece === null ? { row: rowIndex, col: colIndex } : null)));
+  const allEmptyPlaces = emptyPlaces.reduce((acc: Coordinates[], row) => {
+    const notNullPlaces = row.filter(place => place !== null) as Coordinates[];
+    return [...acc, ...notNullPlaces];
+  }, []);
+
+  if (piece.type === 'Pawn' || piece.type === 'Lance' || piece.type === 'Horse_Knight') {
+    const condition = piece.color === 'Sente' 
+      ? (item: Coordinates) => item.row !== 0
+      : (item: Coordinates) => item.row !== 8;
+    
+    allEmptyPlaces.splice(0, allEmptyPlaces.length, ...allEmptyPlaces.filter(condition));
+  }
+
+  // TODO: доделать правильную обработку вместо всех пустых позиция на поле 
+
+  return allEmptyPlaces;
 }
