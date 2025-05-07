@@ -1,8 +1,12 @@
 import { askPromotion } from '../store/game';
-import { Piece, Coordinates } from '../store/game.types';
+import { Piece, Coordinates, CheckState } from '../store/game.types';
+import { isKingInCheck } from './calculateKingCheck';
 
 // Проверка наличия фигуры на клетке игрового поля
-export const getPiece = (board: (Piece | null)[][], coords: Coordinates): boolean => {
+export const getPiece = (
+  board: (Piece | null)[][], 
+  coords: Coordinates
+): boolean => {
   if (board[coords.row][coords.col] !== null) return true;
   return false;
 }
@@ -12,13 +16,20 @@ const isValidPosition = (r: number, c: number) =>
   r >= 0 && r < 9 && c >= 0 && c < 9;
 
 // Проверка на возможность захвата
-const canCapture = (r: number, c: number, board: (Piece | null)[][], piece: Piece) => {
+const canCapture = (
+  r: number, c: number, 
+  board: (Piece | null)[][], 
+  piece: Piece
+) => {
   if (!isValidPosition(r, c)) return false;
   const target = board[r][c];
   return !target || target.color !== piece.color;
 };
 
-const getBasicMoves = (piece: Piece, board: (Piece | null)[][]): Coordinates[] => {
+const getBasicMoves = (
+  piece: Piece, 
+  board: (Piece | null)[][]
+): Coordinates[] => {
   const moves: Coordinates[] = [];
   const { type, color, position, promoted } = piece;
   const { row, col } = position;
@@ -64,9 +75,7 @@ const getBasicMoves = (piece: Piece, board: (Piece | null)[][]): Coordinates[] =
       // Обычная пешка
       if (!promoted) {
         const newRow = row + direction;
-        if (isValidPosition(newRow, col)) {
-          moves.push({ row: newRow, col: col });
-        }
+        if (isValidPosition(newRow, col)) moves.push({ row: newRow, col: col });
       } 
       // Перевернутая пешка
       else {
@@ -198,8 +207,56 @@ export const calculateAvailableMoves = (
   return [...basicMoves]; 
 };
 
+export const getAvailableMovesWithCheck = (
+  piece: Piece,
+  position: Coordinates,
+  board: (Piece | null)[][],
+  checkState: CheckState | null
+): Coordinates[] => {
+  const basicMoves = calculateAvailableMoves(piece, board);
+  if (!checkState) return getAvailableMovesWithoutCheck(basicMoves, piece, board);
+
+  // Король может ходить только на escapeMoves
+  if (piece.type === 'King') {
+    return basicMoves.filter(move => 
+      checkState.escapeMoves!.some(em => 
+        em.row === move.row && em.col === move.col
+      )
+    );
+  }
+
+  // Другие фигуры могут ходить только на блокирующие клетки
+  return basicMoves.filter(move => {
+    return checkState.blockMoves!.some(block => 
+      block.piece.row === position.row &&
+      block.piece.col === position.col &&
+      block.path.some(cell => cell.row === move.row && cell.col === move.col)
+    );
+  });
+};
+
+// Функция для проверки ходов фигур (убирать ходы, подставляющие короля под шах)
+const getAvailableMovesWithoutCheck = (
+  moves: Coordinates[], 
+  piece: Piece, 
+  board: (Piece | null)[][]
+): Coordinates[] => {
+  return moves.filter(move => {
+    // Создаем временную доску с предполагаемым ходом короля
+    const tempBoard = JSON.parse(JSON.stringify(board)) as (Piece | null)[][];
+    // Перемещаем фигуру на новую позицию
+    tempBoard[move.row][move.col] = tempBoard[piece.position.row][piece.position.col];
+    tempBoard[piece.position.row][piece.position.col] = null;
+    // Проверяем, не находится ли король под шахом на обновленной доске
+    return !isKingInCheck(tempBoard, piece.color);
+  });
+}
+
 // Функция для проверки возможности переворота фигуры
-export const shouldPromote = (selectedPiece: Piece | null, toPosition: Coordinates): boolean => {
+export const shouldPromote = (
+  selectedPiece: Piece | null, 
+  toPosition: Coordinates
+): boolean => {
   if (selectedPiece) {
     const promote = (selectedPiece.color === 'Gote' && toPosition.row >= 6) || 
                     (selectedPiece.color === 'Sente' && toPosition.row <= 2);
@@ -232,15 +289,34 @@ export const calculateAvailableResets = (
     return [...acc, ...notNullPlaces];
   }, []);
 
-  if (piece.type === 'Pawn' || piece.type === 'Lance' || piece.type === 'Horse_Knight') {
+  if (piece.type === 'Pawn' || piece.type === 'Lance') {
     const condition = piece.color === 'Sente' 
       ? (item: Coordinates) => item.row !== 0
       : (item: Coordinates) => item.row !== 8;
-    
     allEmptyPlaces.splice(0, allEmptyPlaces.length, ...allEmptyPlaces.filter(condition));
   }
 
-  // TODO: доделать правильную обработку вместо всех пустых позиция на поле 
+  if (piece.type === 'Horse_Knight') {
+    const condition = piece.color === 'Sente' 
+      ? (item: Coordinates) => item.row !== 0 && item.row !== 1
+      : (item: Coordinates) => item.row !== 8 && item.row !== 7;
+    allEmptyPlaces.splice(0, allEmptyPlaces.length, ...allEmptyPlaces.filter(condition));
+  }
+
+  if (piece.type === 'Pawn') {
+    const rowsWithPawnsNotPromoted: number[] = [];
+    board.forEach((row) => 
+      row.forEach((item) => {
+        if (item !== null && item.type === 'Pawn' && item.color === piece.color) {
+          rowsWithPawnsNotPromoted.push(item.position.col);
+        }
+      }));
+
+    const filteredEmptyPlaces = allEmptyPlaces.filter(
+      place => !rowsWithPawnsNotPromoted.includes(place.col)
+    );
+    return filteredEmptyPlaces;
+  }
 
   return allEmptyPlaces;
 }
