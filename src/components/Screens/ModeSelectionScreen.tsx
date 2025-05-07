@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { switchMainStateScreen } from '../../store/screens';
+import { changeGameMode, setAILevel } from '../../store/game';
+import { GameMode } from '../../store/game.types';
 
 export const ModeSelectionScreen = () => {
-  // Состояния для выбора режимов
-  const [selectedMode, setSelectedMode] = useState<string>('');
+  const [selectedMode, setSelectedMode] = useState<GameMode>('Classic');
   const [isAI, setIsAI] = useState(false);
-  const [aiLevel, setAiLevel] = useState<'easy' | 'hard' | ''>('');
+  const [aiLvl, setAiLvl] = useState<'Hard' | 'Easy'>('Easy');
+  
+  const modes: GameMode[] = ['Classic', 'Points', 'Limits', 'NewFigure'];
 
   return (
     <div className="flex justify-center items-center h-screen w-2/4">
@@ -15,15 +18,20 @@ export const ModeSelectionScreen = () => {
 
           {/* Режимы игры */}
           <div className="grid grid-cols-2 gap-6 mb-8">
-            {['Классическая игра', 'Игра на набор очков', 'Игра с ограничениями', 'Игра с новой фигурой'].map((mode) => (
+            {modes.map((mode) => (
               <button
                 key={mode}
                 className={`px-6 py-4 text-lg font-semibold border-2 rounded-lg transition 
                             ${selectedMode === mode ? 'bg-orange-600 text-white' : 'bg-white text-orange-900'} 
                             hover:bg-orange-500 hover:text-white`}
-                onClick={() => setSelectedMode(mode)}
+                onClick={() => {
+                  setSelectedMode(mode);
+                  changeGameMode(mode);
+                }}
               >
-                {mode}
+                {mode === 'Classic' ? 'Классическая игра' : 
+                 mode === 'Points' ? 'Игра на набор очков' :
+                 mode === 'Limits' ? 'Игра с ограничениями' : 'Игра с новой фигурой'}
               </button>
             ))}
           </div>
@@ -34,7 +42,11 @@ export const ModeSelectionScreen = () => {
               className={`w-40 px-8 py-4 text-lg font-semibold border-2 rounded-lg transition
                           ${isAI ? 'bg-orange-600 text-white' : 'bg-white text-orange-900'} 
                           hover:bg-orange-500 hover:text-white`}
-              onClick={() => setIsAI(true)}
+              onClick={() => {
+                setIsAI(true);
+                setAiLvl('Easy');
+                setAILevel('Easy');
+              }}
             >
               Игра с ИИ
             </button>
@@ -45,7 +57,8 @@ export const ModeSelectionScreen = () => {
                           hover:bg-orange-500 hover:text-white`}
               onClick={() => {
                 setIsAI(false);
-                setAiLevel(''); // Сброс уровня ИИ
+                setAiLvl('Easy');
+                setAILevel(null); // Сброс уровня ИИ
               }}
             >
               Игра на 2 игроков
@@ -57,18 +70,24 @@ export const ModeSelectionScreen = () => {
             <div className="flex gap-8 mb-8">
               <button
                 className={`w-36 px-6 py-3 text-lg font-semibold border-2 rounded-lg transition 
-                            ${aiLevel === 'easy' ? 'bg-orange-600 text-white' : 'bg-white text-orange-900'} 
+                            ${aiLvl === 'Easy' ? 'bg-orange-600 text-white' : 'bg-white text-orange-900'} 
                             hover:bg-orange-500 hover:text-white`}
-                onClick={() => setAiLevel('easy')}
+                onClick={() => {
+                  setAiLvl('Easy');
+                  setAILevel('Easy');
+                }}
               >
                 Легкий
               </button>
               
               <button
                 className={`w-36 px-6 py-3 text-lg font-semibold border-2 rounded-lg transition 
-                            ${aiLevel === 'hard' ? 'bg-orange-600 text-white' : 'bg-white text-orange-900'} 
+                            ${aiLvl === 'Hard' ? 'bg-orange-600 text-white' : 'bg-white text-orange-900'} 
                             hover:bg-orange-500 hover:text-white`}
-                onClick={() => setAiLevel('hard')}
+                onClick={() => {
+                  setAiLvl('Hard');
+                  setAILevel('Hard');
+                }}
               >
                 Сложный
               </button>

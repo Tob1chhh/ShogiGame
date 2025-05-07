@@ -3,7 +3,7 @@
 My graduate thesis is based on the Japanese game of Shogi.
 
 
-Project structure:
+# **Project structure:**
 
 │── src/
 
@@ -15,9 +15,9 @@ Project structure:
 
 │   ├── models/               # Типы и интерфейсы TypeScript
 
-│   ├── store/                # Effector-стейт менеджмент
+│   ├── services/             # Сервисы для обработки правил игры
 
-│   ├── utils/                # Вспомогательные функции
+│   ├── store/                # Effector-стейт менеджмент
 
 │   │
 

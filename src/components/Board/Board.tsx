@@ -5,6 +5,8 @@ import {
   $capturedPieces, $checkState, 
   $currentPlayer, $gameState, $selectedHandPiece, 
   $selectedPiece, movePiece, 
+  openModal, 
+  resetGame, 
   selectCapturedPiece, selectNullCell
 } from '../../store/game';
 import { switchMainStateScreen } from '../../store/screens';
@@ -13,6 +15,7 @@ import { CellProps, Move } from '../../store/game.types';
 import { promptPromotion, shouldPromote } from '../../services/calculateMoves';
 import { GamePiece } from '../Piece/Piece';
 import { ModalPromote } from '../Screens/ModalPromote';
+import { ModalResultGame } from '../Screens/ModalResultGame';
 
 export const Board = () => {
   const game = useUnit($gameState);
@@ -22,17 +25,14 @@ export const Board = () => {
   const capturedPieces = useUnit($capturedPieces);
   const checkState = useUnit($checkState);
 
-  // TODO: сделать модальное окно для вывода результата игры (2)
-  // TODO: сделать обработку "пата" (1)
+  console.log(game);
+
   useEffect(() => {
     if (game.gamePhase === 'Checkmate')
-      setTimeout(() => {
-        alert(`Игра окончена!\nПобедитель: ${currentPlayer === 'Sente' ? 'Готэ' : 'Сэнтэ'}`);
-      }, 800);
+      openModal(`Игра окончена!\nПобедитель: ${currentPlayer === 'Sente' ? 'Готэ ↓' : 'Сэнтэ ↑'}`);
+
     if (game.gamePhase === 'Draw')
-      setTimeout(() => {
-        alert(`Игра окончена!\nОбъявлена ничья!`);
-      }, 800); 
+      openModal(`Игра окончена!\nОбъявлена ничья!`);
   }, [game]);
 
   const getCellState = (row: number, col: number) => {
@@ -127,7 +127,10 @@ export const Board = () => {
             </button>
             <button className="w-56 h-12 bg-green-600 text-white font-bold rounded-md shadow-md 
                               hover:bg-green-700 transition duration-300"
-                    onClick={() => switchMainStateScreen('startScreen')}
+                    onClick={() => {
+                      resetGame();
+                      switchMainStateScreen('startScreen');
+                    }}
             >
               Главное меню
             </button>
@@ -135,6 +138,7 @@ export const Board = () => {
         </div>
       </div>
       <ModalPromote />
+      <ModalResultGame />
     </div>
   );
 };
