@@ -34,7 +34,14 @@ export interface Piece {
   onClick: () => void;
 }
 
+export type GameMode = 'Classic'
+  | 'Points' 
+  | 'Limits'
+  | 'NewFigure'
+
 export interface GameState {
+  gameMode: GameMode;
+  aiLevel: 'Hard' | 'Easy' | null;
   board: (Piece | null)[][];
   currentPlayer: PlayerColor;
   selectedPiece: Coordinates | null;
@@ -57,9 +64,10 @@ export interface Move {
   promotes?: boolean;
 }
 
-export interface PromotionModalState {
+export interface ModalState {
   isOpen: boolean;
   response?: (response: boolean) => void;
+  resultString?: string;
 }
 
 export interface GameResult {

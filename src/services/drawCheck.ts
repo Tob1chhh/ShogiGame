@@ -2,13 +2,14 @@ import { Piece } from "../store/game.types";
 
 const positionHistory: string[] = [];
 
-// Проверка повторения 
+// Проверка ничьи при четырехкратном повторении 
 export const checkRepetitionDraw = (board: (Piece | null)[][]): boolean => {
   const currentPos = boardToString(board);
   const occurrences = positionHistory.filter(pos => pos === currentPos).length;
   positionHistory.push(currentPos);
-  
-  // Ничья при Четырехкратном повторении
+  // Обнуление истории ходов при совершении более 12 ходов (для оптимизации)
+  if (positionHistory.length > 12) positionHistory.length = 0;
+
   return occurrences >= 3;
 };
 
@@ -18,13 +19,13 @@ const boardToString = (board: (Piece | null)[][]): string => {
   ).join('|');
 };
 
+// Проверка ничьи при наличии только королей у игроков или королей и 1 другой фигуры
 export const checkInsufficientMaterial = (board: (Piece | null)[][]): boolean => {
   const pieces = {
     Sente: { king: 0, others: 0 },
     Gote: { king: 0, others: 0 }
   };
 
-  // Подсчет фигур
   for (const row of board) {
     for (const piece of row) {
       if (piece) {
@@ -34,10 +35,7 @@ export const checkInsufficientMaterial = (board: (Piece | null)[][]): boolean =>
       }
     }
   }
-
-  // Условия ничьи:
-  // 1. У обоих только короли
-  // 2. Король + 1 легкая фигура против короля
+  
   return (
     (pieces.Sente.others === 0 && pieces.Gote.others === 0) ||
     (pieces.Sente.others <= 1 && pieces.Gote.others <= 1)
