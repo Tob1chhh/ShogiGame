@@ -1,5 +1,6 @@
 import { CheckState, Coordinates, Piece, PlayerColor } from "../store/game.types";
-import { calculateAvailableMoves } from "./calculateMoves";
+import { calculateAvailableMoves, getAvailableResets } from "./calculateMoves";
+import { getOpponent } from "./helpGameLogic";
 
 export const isKingInCheck = (
   board: (Piece | null)[][],
@@ -39,13 +40,14 @@ export const findKingPosition = (
 
 export const detectCheck = (
   board: (Piece | null)[][], 
-  kingColor: PlayerColor
+  kingColor: PlayerColor,
+  capturedPieces: Piece[],
 ): CheckState | null => {
   const kingPos = findKingPosition(board, kingColor);
   if (!kingPos) return null;
 
   const attackers: Coordinates[] = [];
-  const opponentColor = kingColor === 'Sente' ? 'Gote' : 'Sente';
+  const opponentColor = getOpponent(kingColor);
 
   // Находим все фигуры, атакующие короля
   for (let row = 0; row < 9; row++) {
@@ -65,7 +67,7 @@ export const detectCheck = (
     attacker: attackers[0], // Берём первую атакующую фигуру
     kingPosition: kingPos,
     escapeMoves: calculateKingEscapeMoves(board, kingPos, kingColor),
-    blockMoves: calculateBlockingMoves(board, kingPos, attackers[0], kingColor)
+    blockMoves: calculateBlockingMoves(board, kingPos, attackers[0], kingColor, capturedPieces)
   };
 };
 
@@ -89,7 +91,7 @@ const calculateKingEscapeMoves = (
       const piece = board[newRow][newCol];
       if (!piece || piece.color !== kingColor) {
         // Симулируем ход короля
-        const tempBoard = simulateMove(board, kingPos, { row: newRow, col: newCol });
+        const tempBoard = simulateKingMove(board, kingPos, { row: newRow, col: newCol });
         if (!isKingInCheck(tempBoard, kingColor)) {
           moves.push({ row: newRow, col: newCol });
         }
@@ -103,7 +105,8 @@ const calculateBlockingMoves = (
   board: (Piece | null)[][],
   kingPos: Coordinates,
   attackerPos: Coordinates,
-  kingColor: PlayerColor
+  kingColor: PlayerColor,
+  capturedPieces: Piece[]
 ) => {
   const attacker = board[attackerPos.row][attackerPos.col]!;
   const path = getAttackPath(attacker, attackerPos, kingPos);
@@ -129,6 +132,21 @@ const calculateBlockingMoves = (
       }
     }
   }
+
+  capturedPieces.forEach((piece) => {
+    const resets = getAvailableResets(piece, board);
+    const blockingCells = resets.filter(reset => 
+      path.some(cell => cell.row === reset.row && cell.col === reset.col)
+    );
+
+    if (blockingCells.length > 0) {
+      blockingOptions.push({
+        piece: { row: piece.position.row, col: piece.position.col },
+        path: blockingCells
+      });
+    }
+  });
+
   return blockingOptions;
 };
 
@@ -139,6 +157,8 @@ const getAttackPath = (
   kingPos: Coordinates
 ): Coordinates[] => {
   if (attacker.type === 'Horse_Knight') return []; // Конь не атакует по линии
+
+  // console.log(attacker, attackerPos, kingPos);
   
   const path: Coordinates[] = [];
   const dr = Math.sign(kingPos.row - attackerPos.row);
@@ -146,16 +166,18 @@ const getAttackPath = (
   let row = attackerPos.row + dr;
   let col = attackerPos.col + dc;
   
+  
   while (row !== kingPos.row || col !== kingPos.col) {
     path.push({ row, col });
     row += dr;
     col += dc;
   }
+  
   return path;
 };
 
 // Вспомогательная функция для симуляции хода
-const simulateMove = (
+const simulateKingMove = (
   board: (Piece | null)[][],
   from: Coordinates,
   to: Coordinates

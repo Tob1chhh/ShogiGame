@@ -91,14 +91,26 @@ const getBasicMoves = (
           for (let i = position.row + 1; i < 9; i++) {
             if (!getPiece(board, { row: i, col: position.col })) {
               moves.push({ row: i, col: position.col });
-            } else break;
+            } else {
+              if (board[i][position.col]?.color === 'Gote') break;
+              else {
+                moves.push({ row: i, col: position.col });
+                break;
+              }
+            }
           }
         }
         if (color === 'Sente') {
           for (let i = position.row - 1; i >= 0; i--) {
             if (!getPiece(board, { row: i, col: position.col })) {
               moves.push({ row: i, col: position.col });
-            } else break;
+            } else {
+              if (board[i][position.col]?.color === 'Sente') break;
+              else {
+                moves.push({ row: i, col: position.col });
+                break;
+              }
+            }
           }
         }
       }
@@ -207,6 +219,7 @@ export const calculateAvailableMoves = (
   return [...basicMoves]; 
 };
 
+//! Функция для проверки ходов фигур
 export const getAvailableMovesWithCheck = (
   piece: Piece,
   position: Coordinates,
@@ -235,7 +248,7 @@ export const getAvailableMovesWithCheck = (
   });
 };
 
-// Функция для проверки ходов фигур (убирать ходы, подставляющие короля под шах)
+//! Функция для проверки ходов фигур (убирать ходы, подставляющие короля под шах)
 const getAvailableMovesWithoutCheck = (
   moves: Coordinates[], 
   piece: Piece, 
@@ -252,7 +265,7 @@ const getAvailableMovesWithoutCheck = (
   });
 }
 
-// Функция для проверки возможности переворота фигуры
+//! Функция для проверки возможности переворота фигуры
 export const shouldPromote = (
   selectedPiece: Piece | null, 
   toPosition: Coordinates
@@ -269,15 +282,15 @@ export const shouldPromote = (
   return false;
 }
 
-// Функция-хэлпер для удобной проверки ответа модального окна переворота фигуры
+//! Функция-хэлпер для удобной проверки ответа модального окна переворота фигуры
 export const promptPromotion = (): Promise<boolean> => {
   return new Promise((response) => {
     askPromotion({ response });
   });
 };
 
-// Функция расчета возможных позиция для сброса фигуры из "руки"
-export const calculateAvailableResets = (
+//! Функция расчета возможных позиция для сброса фигуры из "руки"
+export const getAvailableResets = (
   piece: Piece | null,
   board: (Piece | null)[][]
 ): Coordinates[] => {
@@ -319,4 +332,22 @@ export const calculateAvailableResets = (
   }
 
   return allEmptyPlaces;
+}
+
+export const getAvailableResetsWithCheck = (
+  piece: Piece | null,
+  position: Coordinates,
+  board: (Piece | null)[][],
+  checkState: CheckState | null
+): Coordinates[] => {
+  const availableResets = getAvailableResets(piece, board);  
+  if (!checkState) return availableResets;
+
+  return availableResets.filter(move => {
+    return checkState.blockMoves!.some(block => 
+      block.piece.row === position.row &&
+      block.piece.col === position.col &&
+      block.path.some(cell => cell.row === move.row && cell.col === move.col)
+    );
+  });
 }

@@ -1,71 +1,84 @@
 import { createStore, createEvent } from 'effector';
-import { GameMode, GamePhase, GameState, ModalState, Move, Piece } from './game.types';
-import { calculateAvailableResets, getAvailableMovesWithCheck } from '../services/calculateMoves';
-import { detectCheck } from '../services/calculateKingCheck';
-import { checkInsufficientMaterial, checkRepetitionDraw } from '../services/drawCheck';
+import { GameMode, GameState, ModalState, Move, Piece } from './game.types';
+import { getAvailableResetsWithCheck, getAvailableMovesWithCheck } from '../services/calculateMoves';
+import { makeMove } from '../services/helpGameLogic';
 
 // Начальное состояние доски
 const initialBoard: Piece[][] = [
-  // [ { type: 'Lance',        color: 'Gote', position: {row: 0, col: 0}, promoted: false }, 
-  //   { type: 'Horse_Knight', color: 'Gote', position: {row: 0, col: 1}, promoted: false },
-  //   { type: 'Silver',       color: 'Gote', position: {row: 0, col: 2}, promoted: false },
-  //   { type: 'Gold',         color: 'Gote', position: {row: 0, col: 3}, promoted: false },
-  //   { type: 'King',         color: 'Gote', position: {row: 0, col: 4}, promoted: false },
-  //   { type: 'Gold',         color: 'Gote', position: {row: 0, col: 5}, promoted: false },
-  //   { type: 'Silver',       color: 'Gote', position: {row: 0, col: 6}, promoted: false },
-  //   { type: 'Horse_Knight', color: 'Gote', position: {row: 0, col: 7}, promoted: false },
-  //   { type: 'Lance',        color: 'Gote', position: {row: 0, col: 8}, promoted: false } ],
-  // [ null, 
-  //   { type: 'Rook',         color: 'Gote', position: {row: 1, col: 1}, promoted: false }, 
-  //   null, null, null, null, null, 
-  //   { type: 'Bishop',       color: 'Gote', position: {row: 1, col: 7}, promoted: false }, 
-  //   null ],
-  // [ { type: 'Pawn', color: 'Gote', position: {row: 2, col: 0}, promoted: false }, 
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 1}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 2}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 3}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 4}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 5}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 6}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 7}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 8}, promoted: false } ],
+  [ { type: 'Lance',        color: 'Gote', position: {row: 0, col: 0}, promoted: false }, 
+    { type: 'Horse_Knight', color: 'Gote', position: {row: 0, col: 1}, promoted: false },
+    { type: 'Silver',       color: 'Gote', position: {row: 0, col: 2}, promoted: false },
+    { type: 'Gold',         color: 'Gote', position: {row: 0, col: 3}, promoted: false },
+    { type: 'King',         color: 'Gote', position: {row: 0, col: 4}, promoted: false },
+    { type: 'Gold',         color: 'Gote', position: {row: 0, col: 5}, promoted: false },
+    { type: 'Silver',       color: 'Gote', position: {row: 0, col: 6}, promoted: false },
+    { type: 'Horse_Knight', color: 'Gote', position: {row: 0, col: 7}, promoted: false },
+    { type: 'Lance',        color: 'Gote', position: {row: 0, col: 8}, promoted: false } ],
+  [ null, 
+    { type: 'Rook',         color: 'Gote', position: {row: 1, col: 1}, promoted: false }, 
+    null, null, null, null, null, 
+    { type: 'Bishop',       color: 'Gote', position: {row: 1, col: 7}, promoted: false }, 
+    null ],
+  [ { type: 'Pawn', color: 'Gote', position: {row: 2, col: 0}, promoted: false }, 
+    { type: 'Pawn', color: 'Gote', position: {row: 2, col: 1}, promoted: false },
+    { type: 'Pawn', color: 'Gote', position: {row: 2, col: 2}, promoted: false },
+    { type: 'Pawn', color: 'Gote', position: {row: 2, col: 3}, promoted: false },
+    { type: 'Pawn', color: 'Gote', position: {row: 2, col: 4}, promoted: false },
+    { type: 'Pawn', color: 'Gote', position: {row: 2, col: 5}, promoted: false },
+    { type: 'Pawn', color: 'Gote', position: {row: 2, col: 6}, promoted: false },
+    { type: 'Pawn', color: 'Gote', position: {row: 2, col: 7}, promoted: false },
+    { type: 'Pawn', color: 'Gote', position: {row: 2, col: 8}, promoted: false } ],
+  // [ null, null, null, null, 
+  //   { type: 'King', color: 'Gote', position: {row: 0, col: 4}, promoted: false }, 
+  //   null, null, null, null ],
   Array(9).fill(null),
   Array(9).fill(null),
-  [null, null, null, null, { type: 'King', color: 'Gote', position: {row: 2, col: 4}, promoted: false }, null, null, null, null],
   Array(9).fill(null),
-  Array(9).fill(null),
-  [{ type: 'Rook', color: 'Sente', position: {row: 5, col: 0}, promoted: false }, null, null, null, null, null, null, null, null],
-  [null, null, null, 
-    { type: 'Rook', color: 'Sente', position: {row: 6, col: 3}, promoted: false }, 
-    null, 
-    { type: 'Rook', color: 'Sente', position: {row: 6, col: 5}, promoted: false }, 
-    null, null, null],
-  Array(9).fill(null),
+  // [ null, null, null, null, 
+  //   { type: 'Silver', color: 'Gote', position: {row: 4, col: 4}, promoted: false }, 
+  //   null, null, null, null ],
+  // [null, null, null, null, { type: 'King', color: 'Gote', position: {row: 2, col: 4}, promoted: false }, null, null, null, null],
+  // Array(9).fill(null),
+  // Array(9).fill(null),
+  // [{ type: 'Rook', color: 'Sente', position: {row: 5, col: 0}, promoted: false }, { type: 'Gold', color: 'Gote', position: {row: 5, col: 1}, promoted: false }, null, null, null, null, null, null, null],
+  // [null, null, null, 
+  //   { type: 'Rook', color: 'Sente', position: {row: 6, col: 3}, promoted: false }, 
+  //   null, 
+  //   { type: 'Rook', color: 'Sente', position: {row: 6, col: 5}, promoted: false }, 
+  //   null, null, null],
+  // Array(9).fill(null),
   // [null, null, null, null, { type: 'King', color: 'Sente', position: {row: 7, col: 4}, promoted: false }, null, null, null, null],
-  Array(9).fill(null),
-  // [ { type: 'Pawn', color: 'Sente', position: {row: 6, col: 0}, promoted: false }, 
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 1}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 2}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 3}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 4}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 5}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 6}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 7}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 8}, promoted: false } ],
-  // [ null, 
-  //   { type: 'Bishop',       color: 'Sente', position: {row: 7, col: 1}, promoted: false }, 
-  //   null, null, null, null, null, 
-  //   { type: 'Rook',         color: 'Sente', position: {row: 7, col: 7}, promoted: false }, 
-  //   null ],
-  // [ { type: 'Lance',        color: 'Sente', position: {row: 8, col: 0}, promoted: false }, 
-  //   { type: 'Horse_Knight', color: 'Sente', position: {row: 8, col: 1}, promoted: false },
-  //   { type: 'Silver',       color: 'Sente', position: {row: 8, col: 2}, promoted: false },
-  //   { type: 'Gold',         color: 'Sente', position: {row: 8, col: 3}, promoted: false },
-  //   { type: 'King',         color: 'Sente', position: {row: 8, col: 4}, promoted: false },
-  //   { type: 'Gold',         color: 'Sente', position: {row: 8, col: 5}, promoted: false },
-  //   { type: 'Silver',       color: 'Sente', position: {row: 8, col: 6}, promoted: false },
-  //   { type: 'Horse_Knight', color: 'Sente', position: {row: 8, col: 7}, promoted: false },
-  //   { type: 'Lance',        color: 'Sente', position: {row: 8, col: 8}, promoted: false } ],
+  // Array(9).fill(null),
+  // [ null, null, null, null, 
+  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 4}, promoted: false }, 
+  //   null, null, null, null ],
+  // Array(9).fill(null),
+  // [ { type: 'Pawn', color: 'Sente', position: {row: 8, col: 0}, promoted: false }, { type: 'Pawn', color: 'Sente', position: {row: 8, col: 1}, promoted: false }, null, null, 
+  //   { type: 'King', color: 'Sente', position: {row: 8, col: 4}, promoted: false }, 
+  //   null, null, null, null ],
+  [ { type: 'Pawn', color: 'Sente', position: {row: 6, col: 0}, promoted: false }, 
+    { type: 'Pawn', color: 'Sente', position: {row: 6, col: 1}, promoted: false },
+    { type: 'Pawn', color: 'Sente', position: {row: 6, col: 2}, promoted: false },
+    { type: 'Pawn', color: 'Sente', position: {row: 6, col: 3}, promoted: false },
+    { type: 'Pawn', color: 'Sente', position: {row: 6, col: 4}, promoted: false },
+    { type: 'Pawn', color: 'Sente', position: {row: 6, col: 5}, promoted: false },
+    { type: 'Pawn', color: 'Sente', position: {row: 6, col: 6}, promoted: false },
+    { type: 'Pawn', color: 'Sente', position: {row: 6, col: 7}, promoted: false },
+    { type: 'Pawn', color: 'Sente', position: {row: 6, col: 8}, promoted: false } ],
+  [ null, 
+    { type: 'Bishop',       color: 'Sente', position: {row: 7, col: 1}, promoted: false }, 
+    null, null, null, null, null, 
+    { type: 'Rook',         color: 'Sente', position: {row: 7, col: 7}, promoted: false }, 
+    null ],
+  [ { type: 'Lance',        color: 'Sente', position: {row: 8, col: 0}, promoted: false }, 
+    { type: 'Horse_Knight', color: 'Sente', position: {row: 8, col: 1}, promoted: false },
+    { type: 'Silver',       color: 'Sente', position: {row: 8, col: 2}, promoted: false },
+    { type: 'Gold',         color: 'Sente', position: {row: 8, col: 3}, promoted: false },
+    { type: 'King',         color: 'Sente', position: {row: 8, col: 4}, promoted: false },
+    { type: 'Gold',         color: 'Sente', position: {row: 8, col: 5}, promoted: false },
+    { type: 'Silver',       color: 'Sente', position: {row: 8, col: 6}, promoted: false },
+    { type: 'Horse_Knight', color: 'Sente', position: {row: 8, col: 7}, promoted: false },
+    { type: 'Lance',        color: 'Sente', position: {row: 8, col: 8}, promoted: false } ],
 ];
 
 // Основное состояние игры
@@ -88,6 +101,7 @@ export const $gameState = createStore<GameState>({
 
 // Производные состояния
 export const $board = $gameState.map(state => state.board);
+export const $aiLevel = $gameState.map(state => state.aiLevel);
 export const $currentPlayer = $gameState.map(state => state.currentPlayer);
 export const $selectedPiece = $gameState.map(state => state.selectedPiece);
 export const $selectedHandPiece = $gameState.map(state => state.selectedHandPiece);
@@ -114,65 +128,13 @@ $gameState
     availableMoves: getAvailableMovesWithCheck(piece, piece.position, state.board, state.checkState),
   }))
   .on(movePiece, (state, move) => {
-    const updatedBoard: (Piece | null)[][] = [...state.board];
-    const opponent = state.currentPlayer === 'Sente' ? 'Gote' : 'Sente';
-    let capturedPiece: Piece | null = null;
-    if (move.selectedPiece) {
-      if (move.promotes) {
-        move.selectedPiece.promoted = true;
-      }
-      if (updatedBoard[move.to.row][move.to.col] !== null) {
-        capturedPiece = updatedBoard[move.to.row][move.to.col];
-        if (capturedPiece) {
-          capturedPiece.promoted = false;
-          capturedPiece.color === 'Sente' 
-            ? capturedPiece.color = 'Gote' 
-            : capturedPiece.color = 'Sente';
-        }
-        state.currentPlayer === 'Sente' 
-          ? state.capturedPieces.Sente.push(capturedPiece!) 
-          : state.capturedPieces.Gote.push(capturedPiece!);
-      }
-      updatedBoard[move.to.row][move.to.col] = move.selectedPiece;
-      move.selectedPiece.position = { row: move.to.row, col: move.to.col };
-      updatedBoard[move.from.row][move.from.col] = null;
-    } else if (move.selectedHandPiece) {
-      updatedBoard[move.to.row][move.to.col] = move.selectedHandPiece!;
-      move.selectedHandPiece!.position = { row: move.to.row, col: move.to.col };
-      if (state.currentPlayer === 'Sente') {
-        const resetPiece = state.capturedPieces.Sente.findIndex(piece => piece === move.selectedHandPiece);
-        state.capturedPieces.Sente.splice(resetPiece, 1);
-      } else {
-        const resetPiece = state.capturedPieces.Gote.findIndex(piece => piece === move.selectedHandPiece);
-        state.capturedPieces.Gote.splice(resetPiece, 1);
-      }
-    }
-    // Проверка шаха, мата и ничьи
-    const newCheckState = detectCheck(updatedBoard, opponent); // 
-    let phase: GamePhase = 'Normal';
-    if (checkInsufficientMaterial(updatedBoard) || 
-        checkRepetitionDraw(updatedBoard)) phase = 'Draw';
-    else if (!newCheckState) phase = 'Normal';
-    else if (newCheckState?.escapeMoves?.length === 0 && 
-             newCheckState?.blockMoves?.length === 0) phase = 'Checkmate';
-    else phase = 'Check';
-    
-    return {
-      ...state,
-      board: updatedBoard,
-      currentPlayer: opponent,
-      selectedPiece: null,
-      selectedHandPiece: null,
-      availableMoves: [],
-      checkState: newCheckState,
-      gamePhase: phase,
-    }
+    return makeMove(state, move);
   })
   .on(selectCapturedPiece, (state, piece) => ({
     ...state,
     selectedPiece: null,
     selectedHandPiece: piece,
-    availableMoves: calculateAvailableResets(piece, state.board),
+    availableMoves: getAvailableResetsWithCheck(piece, piece.position, state.board, state.checkState),
   }))
   .on(selectNullCell, (state) => ({
     ...state,
