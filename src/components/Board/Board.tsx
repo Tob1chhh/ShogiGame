@@ -5,17 +5,19 @@ import {
   $capturedPieces, $checkState, 
   $currentPlayer, $gameState, $selectedHandPiece, 
   $selectedPiece, movePiece, 
-  openModal, 
-  resetGame, 
+  openModal, resetGame, 
   selectCapturedPiece, selectNullCell
 } from '../../store/game';
 import { switchMainStateScreen } from '../../store/screens';
 import { selectPiece } from '../../store/game';
-import { CellProps, Move } from '../../store/game.types';
+import { CellProps, GameState, Move } from '../../store/game.types';
 import { promptPromotion, shouldPromote } from '../../services/calculateMoves';
 import { GamePiece } from '../Piece/Piece';
 import { ModalPromote } from '../Screens/ModalPromote';
 import { ModalResultGame } from '../Screens/ModalResultGame';
+import { easyAILogic, hardAILogic } from '../../services/serviceAILogic';
+import { getOpponent, simulateMove } from '../../services/helpGameLogic';
+import { getAllPieces, getAllPossibleMoves } from '../../services/helpAILogic';
 
 export const Board = () => {
   const game = useUnit($gameState);
@@ -24,8 +26,6 @@ export const Board = () => {
   const currentPlayer = useUnit($currentPlayer);
   const capturedPieces = useUnit($capturedPieces);
   const checkState = useUnit($checkState);
-
-  console.log(game);
 
   useEffect(() => {
     if (game.gamePhase === 'Checkmate')
@@ -54,10 +54,10 @@ export const Board = () => {
           <div className="w-80 h-48 bg-white border-2 border-gray-400 rounded-md flex items-center justify-center shadow-md player_hand">
             {capturedPieces.Gote.map((piece) => (
               <GamePiece type={piece.type}
-                        color={piece.color}
-                        position={piece.position}
-                        promoted={piece.promoted}
-                        onClick={() => { if (piece.color === currentPlayer) selectCapturedPiece(piece) }}
+                         color={piece.color}
+                         position={piece.position}
+                         promoted={piece.promoted}
+                         onClick={() => { if (piece.color === currentPlayer) selectCapturedPiece(piece) }}
               />
             ))}
           </div>
@@ -67,10 +67,10 @@ export const Board = () => {
           <div className="w-80 h-48 bg-white border-2 border-gray-400 rounded-md flex items-center justify-center shadow-md player_hand">
             {capturedPieces.Sente.map((piece) => (
               <GamePiece type={piece.type}
-                        color={piece.color}
-                        position={piece.position}
-                        promoted={piece.promoted}
-                        onClick={() => { if (piece.color === currentPlayer) selectCapturedPiece(piece) }}
+                         color={piece.color}
+                         position={piece.position}
+                         promoted={piece.promoted}
+                         onClick={() => { if (piece.color === currentPlayer) selectCapturedPiece(piece) }}
               />
             ))}
           </div>
@@ -82,22 +82,23 @@ export const Board = () => {
         {board.map((row, rowIndex) => 
           row.map((piece, colIndex) => {
             return (
-            <Cell row={piece ? piece.position.row : rowIndex}
-                  col={piece ? piece.position.col : colIndex}
-                  isHighlighted={availableMoves.some(move => move.row === rowIndex && move.col === colIndex)}
-                  isCheck={getCellState(piece ? piece.position.row : rowIndex, piece ? piece.position.col : colIndex) === 'king-in-check' && piece?.type === 'King'}
-                  piece={
-                    piece === null ? null
-                    : <GamePiece
-                        type={piece.type}
-                        color={piece.color}
-                        position={piece.position}
-                        promoted={piece.promoted}
-                        onClick={() => { if (piece.color === currentPlayer) selectPiece(piece) }}
-                      />
-                  }>
-            </Cell>
-          )})
+              <Cell row={piece ? piece.position.row : rowIndex}
+                    col={piece ? piece.position.col : colIndex}
+                    isHighlighted={availableMoves.some(move => move.row === rowIndex && move.col === colIndex)}
+                    isCheck={getCellState(piece ? piece.position.row : rowIndex, piece ? piece.position.col : colIndex) === 'king-in-check' && piece?.type === 'King'}
+                    piece={
+                      piece === null ? null
+                      : <GamePiece
+                          type={piece.type}
+                          color={piece.color}
+                          position={piece.position}
+                          promoted={piece.promoted}
+                          onClick={() => { if (piece.color === currentPlayer) selectPiece(piece) }}
+                        />
+                    }>
+              </Cell>
+            )
+          })
         )}
       </div>
 
@@ -144,6 +145,7 @@ export const Board = () => {
 };
 
 const Cell = React.memo(({ row, col, isHighlighted, isCheck, piece }: CellProps) => {
+  const game = useUnit($gameState);
   const board = useUnit($board);
   const currentPlayer = useUnit($currentPlayer);
   const capturedPieces = useUnit($capturedPieces);
@@ -158,15 +160,28 @@ const Cell = React.memo(({ row, col, isHighlighted, isCheck, piece }: CellProps)
         newMove = {
           from: { row: selectedPiece.row, col: selectedPiece.col },
           to: { row: row, col: col },
-          selectedPiece: board[selectedPiece.row][selectedPiece.col],
+          selectedPiece: JSON.parse(JSON.stringify(board[selectedPiece.row][selectedPiece.col])),
         }
-        if ((newMove.selectedPiece?.type === 'Pawn' 
-              || newMove.selectedPiece?.type === 'Lance' 
-              || newMove.selectedPiece?.type === 'Horse_Knight') 
-            && (row === 8 || row === 0)) newMove.promotes = true;
-        else if (shouldPromote(board[newMove.from.row][newMove.from.col], { row: newMove.to.row, col: newMove.to.col })) {
+
+        if (board[row][col] !== null) 
+          newMove.capturedPiece = JSON.parse(JSON.stringify(board[row][col]));
+
+        if (simulateMove(game, newMove).checkState) 
+          newMove.setCheck = true;
+
+        if (
+          ((newMove.selectedPiece?.type === 'Pawn' || newMove.selectedPiece?.type === 'Lance') && (row === 8 || row === 0)) 
+          || (newMove.selectedPiece?.type === 'Horse_Knight' && (row === 8 || row === 7 || row === 1 || row === 0))
+        ) {
+          newMove.needPromote = true;
+          newMove.promotes = true;
+        }
+        else if (shouldPromote(board[newMove.from.row][newMove.from.col], { row: row, col: col })) {
           const shouldPromote = await promptPromotion();
-          if (shouldPromote) newMove.promotes = shouldPromote;
+          if (shouldPromote) {
+            newMove.needPromote = shouldPromote;
+            newMove.promotes = true;
+          }
         }
       } else if (selectedHandPiece) {
         newMove = {
@@ -178,6 +193,24 @@ const Cell = React.memo(({ row, col, isHighlighted, isCheck, piece }: CellProps)
         }
       }
       movePiece(newMove!);
+
+      const currentState = JSON.parse(JSON.stringify($gameState.getState())) as GameState; // Получаем актуальное состояние
+      if (getAllPossibleMoves(
+            getAllPieces(currentState.board, currentState.currentPlayer),
+            currentState.currentPlayer === 'Gote' ? currentState.capturedPieces.Gote : currentState.capturedPieces.Sente,
+            currentState.board, 
+            currentState.checkState
+      ).length === 0) openModal(`Игра окончена!\nХодов не осталось!\n
+        Победитель: ${getOpponent(currentState.currentPlayer) === 'Gote' ? 'Готэ ↓' : 'Сэнтэ ↑'}`);
+      if (currentState.currentPlayer === 'Gote' && currentState.aiLevel) {
+        setTimeout(() => {
+          const aiMove = currentState.aiLevel === 'Easy' ? 
+            easyAILogic(currentState) : 
+            hardAILogic(currentState, 'Gote', 3);
+          if (aiMove) movePiece(aiMove);
+          else openModal(`Игра окончена!\nХодов не осталось!\nПобедитель: 'Сэнтэ ↑'`);
+        }, 1000);
+      }
     }
   }
 

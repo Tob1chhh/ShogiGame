@@ -61,7 +61,10 @@ export interface Move {
   to: Coordinates;
   selectedPiece?: Piece | null;
   selectedHandPiece?: Piece | null;
+  needPromote?: boolean;
   promotes?: boolean;
+  capturedPiece?: Piece | null;
+  setCheck?: boolean;
 }
 
 export interface ModalState {
@@ -81,13 +84,7 @@ export interface CheckState {
   kingPosition?: Coordinates;    // Позиция короля под шахом
   escapeMoves?: Coordinates[];   // Возможные ходы короля
   blockMoves?: {                 // Варианты блокировки
-    piece: Coordinates;         // Какая фигура может блокировать
-    path: Coordinates[];        // Какие клетки нужно перекрыть
+    piece: Coordinates;          // Какая фигура может блокировать
+    path: Coordinates[];         // Какие клетки нужно перекрыть
   }[];
 }
-
-export type DrawReason = 
-  | 'four_repeat'    // Четырехкратное повторение позиции
-  | 'insufficient'   // Недостаток фигур
-  | 'three_check'    // Правило 3 шахов подряд
-  | 'stalemate';     // Пат (редко в сёги)
