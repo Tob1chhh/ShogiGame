@@ -88,3 +88,11 @@ export interface CheckState {
     path: Coordinates[];         // Какие клетки нужно перекрыть
   }[];
 }
+
+export type PieceRules = {
+  name: string;
+  image: string;
+  promoteName?: string;
+  promoteImage?: string;
+  movesGif: string;
+};

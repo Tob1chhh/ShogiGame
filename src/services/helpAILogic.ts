@@ -1,6 +1,6 @@
 import { CheckState, Coordinates, GameState, Move, Piece, PlayerColor } from "../store/game.types";
 import { getAvailableMovesWithCheck, getAvailableResetsWithCheck, shouldPromote } from "./calculateMoves";
-import { getOpponent, simulateMove } from "./helpGameLogic";
+import { getOpponent } from "./helpGameLogic";
 
 // Веса фигур
 export const PIECE_VALUES: Record<string, number> = {

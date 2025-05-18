@@ -267,12 +267,12 @@ const getAvailableMovesWithoutCheck = (
 
 //! Функция для проверки возможности переворота фигуры
 export const shouldPromote = (
-  selectedPiece: Piece | null, 
+  selectedPiece: Piece | null,
   toPosition: Coordinates
 ): boolean => {
   if (selectedPiece) {
-    const promote = (selectedPiece.color === 'Gote' && toPosition.row >= 6) || 
-                    (selectedPiece.color === 'Sente' && toPosition.row <= 2);
+    const promote = (selectedPiece.color === 'Gote' && (toPosition.row >= 6 || (selectedPiece.position.row >= 6 && toPosition.row < 6))) || 
+                    (selectedPiece.color === 'Sente' && (toPosition.row <= 2 || (selectedPiece.position.row <= 2 && toPosition.row > 2)));
     if (promote && !selectedPiece.promoted 
         && selectedPiece.type !== 'Gold' 
         && selectedPiece.type !== 'King') {

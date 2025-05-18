@@ -19,19 +19,20 @@ const boardToString = (board: (Piece | null)[][]): string => {
   ).join('|');
 };
 
-// Проверка ничьи при наличии только королей у игроков или королей и 1 другой фигуры
+// Проверка ничьи при наличии только королей у игроков или королей и 1 легкой фигуры
 export const checkInsufficientMaterial = (board: (Piece | null)[][]): boolean => {
   const pieces = {
     Sente: { king: 0, others: 0 },
     Gote: { king: 0, others: 0 }
   };
+  const lightPieces = ['Pawn', 'Lance', 'Horse_Knight', 'Silver'];
 
   for (const row of board) {
     for (const piece of row) {
       if (piece) {
         const side = piece.color;
         pieces[side].king += piece.type === 'King' ? 1 : 0;
-        pieces[side].others += piece.type !== 'King' ? 1 : 0;
+        pieces[side].others += lightPieces.includes(piece.type) ? 1 : 0;
       }
     }
   }

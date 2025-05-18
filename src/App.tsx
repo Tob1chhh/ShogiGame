@@ -1,8 +1,8 @@
 import { useUnit } from "effector-react";
-import { Board } from "./components/Board/Board";
 import { MainScreen } from "./components/Screens/MainScreen";
 import { ModeSelectionScreen } from "./components/Screens/ModeSelectionScreen";
 import { mainStateScreen } from "./store/screens";
+import { MainGame } from "./components/Screens/MainGame";
 
 const App = () => {
   const currentScreen = useUnit(mainStateScreen);
@@ -11,7 +11,7 @@ const App = () => {
     <div className="flex justify-center items-center h-screen">
       { currentScreen === "startScreen" && <MainScreen /> }
       { currentScreen === "modeSelectScreen" && <ModeSelectionScreen /> }
-      { currentScreen === "gameScreen" && <Board /> }
+      { currentScreen === "gameScreen" && <MainGame /> }
     </div>
   );
 }
