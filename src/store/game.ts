@@ -2,92 +2,7 @@ import { createStore, createEvent } from 'effector';
 import { GameMode, GameState, ModalState, Move, Piece } from './game.types';
 import { getAvailableResetsWithCheck, getAvailableMovesWithCheck } from '../services/calculateMoves';
 import { makeMove } from '../services/helpGameLogic';
-
-// Начальное состояние доски
-const initialBoard: Piece[][] = [
-  // [ { type: 'Lance',        color: 'Gote', position: {row: 0, col: 0}, promoted: false }, 
-  //   { type: 'Horse_Knight', color: 'Gote', position: {row: 0, col: 1}, promoted: false },
-  //   { type: 'Silver',       color: 'Gote', position: {row: 0, col: 2}, promoted: false },
-  //   { type: 'Gold',         color: 'Gote', position: {row: 0, col: 3}, promoted: false },
-  //   { type: 'King',         color: 'Gote', position: {row: 0, col: 4}, promoted: false },
-  //   { type: 'Gold',         color: 'Gote', position: {row: 0, col: 5}, promoted: false },
-  //   { type: 'Silver',       color: 'Gote', position: {row: 0, col: 6}, promoted: false },
-  //   { type: 'Horse_Knight', color: 'Gote', position: {row: 0, col: 7}, promoted: false },
-  //   { type: 'Lance',        color: 'Gote', position: {row: 0, col: 8}, promoted: false } ],
-  // [ null, 
-  //   { type: 'Rook',         color: 'Gote', position: {row: 1, col: 1}, promoted: false }, 
-  //   null, null, null, null, null, 
-  //   { type: 'Bishop',       color: 'Gote', position: {row: 1, col: 7}, promoted: false }, 
-  //   null ],
-  // [ { type: 'Pawn', color: 'Gote', position: {row: 2, col: 0}, promoted: false }, 
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 1}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 2}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 3}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 4}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 5}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 6}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 7}, promoted: false },
-  //   { type: 'Pawn', color: 'Gote', position: {row: 2, col: 8}, promoted: false } ],
-  // [ null, null, null, null, 
-  //   { type: 'King', color: 'Gote', position: {row: 0, col: 4}, promoted: false }, 
-  //   null, null, null, null ],
-  Array(9).fill(null),
-  Array(9).fill(null),
-  Array(9).fill(null),
-  Array(9).fill(null),
-  [ null, null, null, null, 
-    { type: 'Bishop', color: 'Sente', position: {row: 4, col: 4}, promoted: false }, 
-    null, null, null, null ],
-  Array(9).fill(null),
-  Array(9).fill(null),
-  Array(9).fill(null),
-  Array(9).fill(null),
-  // [ null, null, null, null, 
-  //   { type: 'Silver', color: 'Gote', position: {row: 4, col: 4}, promoted: false }, 
-  //   null, null, null, null ],
-  // [null, null, null, null, { type: 'King', color: 'Gote', position: {row: 2, col: 4}, promoted: false }, null, null, null, null],
-  // Array(9).fill(null),
-  // Array(9).fill(null),
-  // [{ type: 'Rook', color: 'Sente', position: {row: 5, col: 0}, promoted: false }, { type: 'Gold', color: 'Gote', position: {row: 5, col: 1}, promoted: false }, null, null, null, null, null, null, null],
-  // [null, null, null, 
-  //   { type: 'Rook', color: 'Sente', position: {row: 6, col: 3}, promoted: false }, 
-  //   null, 
-  //   { type: 'Rook', color: 'Sente', position: {row: 6, col: 5}, promoted: false }, 
-  //   null, null, null],
-  // Array(9).fill(null),
-  // [null, null, null, null, { type: 'King', color: 'Sente', position: {row: 7, col: 4}, promoted: false }, null, null, null, null],
-  // Array(9).fill(null),
-  // [ null, null, null, null, 
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 4}, promoted: false }, 
-  //   null, null, null, null ],
-  // Array(9).fill(null),
-  // [ { type: 'Pawn', color: 'Sente', position: {row: 8, col: 0}, promoted: false }, { type: 'Pawn', color: 'Sente', position: {row: 8, col: 1}, promoted: false }, null, null, 
-  //   { type: 'King', color: 'Sente', position: {row: 8, col: 4}, promoted: false }, 
-  //   null, null, null, null ],
-  // [ { type: 'Pawn', color: 'Sente', position: {row: 6, col: 0}, promoted: false }, 
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 1}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 2}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 3}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 4}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 5}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 6}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 7}, promoted: false },
-  //   { type: 'Pawn', color: 'Sente', position: {row: 6, col: 8}, promoted: false } ],
-  // [ null, 
-  //   { type: 'Bishop',       color: 'Sente', position: {row: 7, col: 1}, promoted: false }, 
-  //   null, null, null, null, null, 
-  //   { type: 'Rook',         color: 'Sente', position: {row: 7, col: 7}, promoted: false }, 
-  //   null ],
-  // [ { type: 'Lance',        color: 'Sente', position: {row: 8, col: 0}, promoted: false }, 
-  //   { type: 'Horse_Knight', color: 'Sente', position: {row: 8, col: 1}, promoted: false },
-  //   { type: 'Silver',       color: 'Sente', position: {row: 8, col: 2}, promoted: false },
-  //   { type: 'Gold',         color: 'Sente', position: {row: 8, col: 3}, promoted: false },
-  //   { type: 'King',         color: 'Sente', position: {row: 8, col: 4}, promoted: false },
-  //   { type: 'Gold',         color: 'Sente', position: {row: 8, col: 5}, promoted: false },
-  //   { type: 'Silver',       color: 'Sente', position: {row: 8, col: 6}, promoted: false },
-  //   { type: 'Horse_Knight', color: 'Sente', position: {row: 8, col: 7}, promoted: false },
-  //   { type: 'Lance',        color: 'Sente', position: {row: 8, col: 8}, promoted: false } ],
-];
+import { initialBoard, initialBoardLimits, initialBoardNewFigure } from './game.boards';
 
 // Основное состояние игры
 export const $gameState = createStore<GameState>({
@@ -105,9 +20,13 @@ export const $gameState = createStore<GameState>({
   checkState: null,
   gamePhase: 'Normal',
   gameResult: null,
+  movesForPoints: null,
+  gamePoints: { Sente: 0, Gote: 0 },
+  positionHistory: []
 });
 
 // Производные состояния
+export const $gameMode = $gameState.map(state => state.gameMode);
 export const $board = $gameState.map(state => state.board);
 export const $aiLevel = $gameState.map(state => state.aiLevel);
 export const $currentPlayer = $gameState.map(state => state.currentPlayer);
@@ -117,6 +36,7 @@ export const $availableMoves = $gameState.map(state => state.availableMoves);
 export const $capturedPieces = $gameState.map(state => state.capturedPieces);
 export const $checkState = $gameState.map(state => state.checkState);
 export const $gamePhase = $gameState.map(state => state.gamePhase);
+export const $movesForPoints = $gameState.map(state => state.movesForPoints);
 
 // События
 export const selectPiece = createEvent<Piece>();                    // Выбор фигуры
@@ -133,7 +53,7 @@ $gameState
     ...state,
     selectedPiece: piece.position,
     selectedHandPiece: null,
-    availableMoves: getAvailableMovesWithCheck(piece, piece.position, state.board, state.checkState),
+    availableMoves: getAvailableMovesWithCheck(piece, piece.position, state.board, state.checkState, state.gameMode),
   }))
   .on(movePiece, (state, move) => {
     return makeMove(state, move);
@@ -165,11 +85,38 @@ $gameState
     checkState: null,
     gamePhase: 'Normal',
     gameResult: null,
+    movesForPoints: null,
+    gamePoints: { Sente: 0, Gote: 0 },
+    positionHistory: [],
   }))
-  .on(changeGameMode, (state, mode) => ({
-    ...state,
-    gameMode: mode,
-  }))
+  .on(changeGameMode, (state, mode) => {
+    if (mode === 'Points') {
+      return {
+        ...state,
+        gameMode: mode,
+        movesForPoints: 50,
+        board: JSON.parse(JSON.stringify(initialBoard)),
+      }
+    } 
+    if (mode === 'Limits') {
+      return {
+        ...state,
+        gameMode: mode,
+        board: JSON.parse(JSON.stringify(initialBoardLimits)),
+      }
+    } 
+    if (mode === 'NewFigure') {
+      return {
+        ...state,
+        gameMode: mode,
+        board: JSON.parse(JSON.stringify(initialBoardNewFigure)),
+      }
+    }
+    return {
+      ...state,
+      gameMode: mode,
+    }
+  })
   .on(setAILevel, (state, aiLevel) => ({
     ...state,
     aiLevel: aiLevel,
@@ -187,7 +134,7 @@ $promotionModal
     return { isOpen: false, response: undefined };
   });
 
-  // Открытие модального окна результата игры
+// Открытие модального окна результата игры
 export const $resultGameModal = createStore<ModalState>({ isOpen: false });
 export const openModal = createEvent<string>('');
 export const closeModal = createEvent();

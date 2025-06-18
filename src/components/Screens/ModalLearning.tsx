@@ -84,6 +84,21 @@ export const ModalLearning = () => {
             <h4 className="text-lg font-medium mb-3">Доска</h4>
             <p className="mb-5"><b>Доска для сёги</b> (яп. - <i>сёгибан</i>) — деревянный прямоугольный параллелепипед с нанесённой на его верхнюю грань разметкой: сеткой из прямоугольных клеток (полей) 9×9. Все поля — одного цвета.</p>
           </Fade>
+          
+          {/* Игровой экран */}
+          <Fade triggerOnce duration={1000} delay={200}>
+            <h4 className="text-lg font-medium mb-3">Игровой экран</h4>
+            <Fade triggerOnce fraction={0.5} duration={1000} delay={300}>
+              <img className="mb-3" src="/img/ClassicGameScreen.png" alt="#" />
+            </Fade>
+            <p className="mb-5">Так выглядит <b>игровой экран</b>. На нем находятся: 
+              <ol className="mt-2 pl-6 list-decimal">
+                <li>В левой части экрана - "руки" (резервы) игроков, куда будут помещаться захваченные фигуры.</li>
+                <li>В центре экрана - название режима над игровым полем и само поле, с размещенными фигурами, которое соответствует выбранному режиму.</li>
+                <li>В правой части экрана - меню с текущим игроком, а также меню для перехода к "Обучению" или главому меню.</li>
+              </ol>
+            </p>
+          </Fade>
 
           {/* Фигуры */}
           <Fade triggerOnce duration={1000} delay={200}>
@@ -192,6 +207,75 @@ export const ModalLearning = () => {
                 <li>В случае, если у каждого игрока остался только король или король и 1 лёгкая фигура, то партия завершается ничьёй.</li>
               </ol>
             </p>
+          </Fade>
+
+          <Fade triggerOnce duration={1000} delay={200}>
+            <h3 className="text-center text-xl font-medium mb-2">Правила новых режимов игры</h3>
+          </Fade>
+          
+          {/* Новый режим - Игра на набор очков */}
+          <Fade triggerOnce duration={1000} delay={300}>
+            <h4 className="text-lg font-medium mb-3">Игра на набор очков</h4>
+          </Fade>
+          <Fade triggerOnce duration={1000} delay={300}>
+            <p className="mb-5">
+              В данном режиме игры добавляется <b>ограниченное количество ходов (50)</b> и <b>цена (вес)</b> для каждой игровой фигуры.<br/><br/> 
+              За захват фигуры противника игроку начисляется количество очков, равное цене фигуры. По истечении допустимых ходов игра завершается, подсчитывается итоговый счет, на основе которого определсяется победитель партии.
+            </p>
+            <Fade triggerOnce fraction={0.5} duration={1000} delay={300}>
+              <img className="mb-3" src="/img/PointsGameScreen.png" alt="#" />
+            </Fade>
+            <p className="mb-5">Так выглядит игровой экран для режима <b>Игра на набор очков</b>. Его отличия от экрана классической игры заключается в наличии счетчиков для каждого игрока, расположенных над игровым полем, а также счетчика ограниченных ходов в правом меню вместе с текущим игроком.</p>
+          </Fade>
+          
+          {/* Новый режим - Игра с ограничениями */}
+          <Fade triggerOnce duration={1000} delay={300}>
+            <h4 className="text-lg font-medium mb-3">Игра с ограничениями</h4>
+          </Fade>
+          <Fade triggerOnce duration={1000} delay={300}>
+            <p className="mb-5">
+              В данном режиме игры происходит <b>ограничение</b> игрового поля до размера 5x5 и количества игровых фигур.<br/><br/> 
+              С каждой стороны представлены 6 фигур: Пешка, Золотой генерал, Король, Серебряный генерал, Слон и Ладья. Правила режима полностью идентичны классическому, игра завершается матом или ничьей.
+            </p>
+            <Fade triggerOnce fraction={0.5} duration={1000} delay={300}>
+              <img className="mb-3" src="/img/LimitsGameScreen.png" alt="#" />
+            </Fade>
+            <p className="mb-5">Так выглядит игровой экран для режима <b>Игра с ограничениями</b>.</p>
+          </Fade>
+          
+          {/* Новый режим - Игра с новой фигурой */}
+          <Fade triggerOnce duration={1000} delay={300}>
+            <h4 className="text-lg font-medium mb-3">Игра с новой фигурой</h4>
+          </Fade>
+          <Fade triggerOnce duration={1000} delay={300}>
+            <p className="mb-5">
+              В данном режиме игры на игровое поле добавляется новый тип фигуры - <b>Тенгу</b>.<br/><br/> 
+              Далее изображен пример хода данной фигуры, а также ее простой и перевернутый вид. У перевернутой фигуры ход изменяется только добавлением возможности ходить влево, вправо и назад также, как и вперед - через клетку. Режим предоставляет возможность сыграть партию в классические сёги с новой фигурой, которая замещает обоих серебрянных генералов и две пешки в каждой из сторон.
+            </p>
+            <Fade triggerOnce fraction={0.5} duration={1000} delay={300}>
+              <p className="font-medium mb-2">Тенгу (пример хода, фигура):</p>
+              <div className="flex items-center gap-4 mb-2">
+                <img 
+                  src="/gifs/ShogiGame-Tengu.gif"
+                  alt="Ход" title="Ход"
+                  className="w-full max-w-40 border-black border-2 rounded-lg p-1"
+                />
+                <img 
+                  src={getPieceIcon('Tengu', 'Sente', false)!}
+                  alt="Тенгу" title="Тенгу"
+                  className="w-full max-w-20 border-black border-2 rounded-lg p-1"
+                />
+                <img 
+                  src={getPieceIcon('Tengu', 'Sente', true)!}
+                  alt="Перевернутый Тенгу" title="Перевернутый Тенгу"
+                  className="w-full max-w-20 border-black border-2 rounded-lg p-1"
+                />
+              </div>
+            </Fade>
+            <Fade triggerOnce fraction={0.5} duration={1000} delay={300}>
+              <img className="mb-3" src="/img/NewFigureGameScreen.png" alt="#" />
+            </Fade>
+            <p className="mb-5">Так выглядит игровой экран для режима <b>Игра с новой фигурой</b>.</p>
           </Fade>
         </section>
       </div>

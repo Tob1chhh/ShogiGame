@@ -1,9 +1,17 @@
+import React from 'react';
 import { useUnit } from 'effector-react';
 import { $resultGameModal, closeModal, resetGame } from '../../store/game';
 import { switchMainStateScreen } from '../../store/screens';
 
 export const ModalResultGame = () => {
   const {isOpen, resultString} = useUnit($resultGameModal);
+
+  const lines = resultString ? resultString.split('\n').map((line, i) => (
+    <React.Fragment key={i}>
+      {line}
+      <br />
+    </React.Fragment>
+  )) : '';
 
   if (!isOpen) return null;
   return (
@@ -17,7 +25,9 @@ export const ModalResultGame = () => {
         }}
       />
       <div className="relative z-10 bg-white rounded-lg p-6 shadow-xl max-w-sm w-full mx-4 border-4 border-orange-900">
-        <h3 className="text-center text-lg font-medium mb-4">{resultString}</h3>
+        <div className="flex justify-center items-center">
+          <span className="text-center text-2xl font-medium mb-4">{lines}</span>
+        </div>
         
         <div className="flex justify-center space-x-4">
           <button

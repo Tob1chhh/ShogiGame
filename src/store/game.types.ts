@@ -24,7 +24,8 @@ export type PieceType = 'Pawn'
   | 'Gold' 
   | 'King' 
   | 'Rook' 
-  | 'Bishop';
+  | 'Bishop'
+  | 'Tengu';
 
 export interface Piece {
   type: PieceType;
@@ -54,6 +55,12 @@ export interface GameState {
   checkState: CheckState | null;
   gamePhase: GamePhase;
   gameResult: PlayerColor | null;
+  movesForPoints?: number | null;
+  gamePoints?: {
+    Sente: number;
+    Gote: number;
+  };
+  positionHistory: string[];
 }
 
 export interface Move {

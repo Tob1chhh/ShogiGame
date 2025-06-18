@@ -1,4 +1,4 @@
-import { CheckState, Coordinates, GameState, Move, Piece, PlayerColor } from "../store/game.types";
+import { CheckState, Coordinates, GameMode, GameState, Move, Piece, PlayerColor } from "../store/game.types";
 import { getAvailableMovesWithCheck, getAvailableResetsWithCheck, shouldPromote } from "./calculateMoves";
 import { getOpponent } from "./helpGameLogic";
 
@@ -7,6 +7,7 @@ export const PIECE_VALUES: Record<string, number> = {
   'King': 1000,
   'Rook': 10, 'PromotedRook': 15,
   'Bishop': 10, 'PromotedBishop': 15,
+  'Tengu': 9, 'PromotedTengu': 12,
   'Gold': 8, 
   'Silver': 5, 'PromotedSilver': 6,
   'Knight': 3, 'PromotedKnight': 4,
@@ -18,19 +19,17 @@ export const getPieceValue = (pieceType: string): number => PIECE_VALUES[pieceTy
 
 //! Функция получения всех доступных ходов
 export const getAllPossibleMoves = (
-  // game: GameState,
   forMove: Piece[], 
   forReset: Piece[], 
   board: (Piece | null)[][],
-  checkState: CheckState | null
+  checkState: CheckState | null,
+  gameMode: GameMode,
 ): Move[] => {
   const allMoves: Move[] = [];
-  // const gameState = JSON.parse(JSON.stringify(game)) as GameState;
-
   // Перебор всех фигур на поле и получение их ходов
   if (forMove) {
     forMove.forEach((piece) => {
-      const movesEndCoordinates: Coordinates[] = getAvailableMovesWithCheck(piece, piece.position, board, checkState);
+      const movesEndCoordinates: Coordinates[] = getAvailableMovesWithCheck(piece, piece.position, board, checkState, gameMode);
       if (movesEndCoordinates.length > 0) {
         movesEndCoordinates.forEach((coordinates) => {
           const newMove: Move = {
@@ -40,9 +39,6 @@ export const getAllPossibleMoves = (
           }
           if (board[coordinates.row][coordinates.col] !== null) 
             newMove.capturedPiece = JSON.parse(JSON.stringify(board[coordinates.row][coordinates.col]));
-
-          // if (simulateMove(gameState, newMove).checkState) 
-          //   newMove.setCheck = true;
           
           if (
             ((piece.type === 'Pawn' || piece.type === 'Lance') && (coordinates.row === 8 || coordinates.row === 0)) 
@@ -51,7 +47,7 @@ export const getAllPossibleMoves = (
             newMove.needPromote = true;
             newMove.promotes = true;
           }
-          else if (shouldPromote(board[newMove.from.row][newMove.from.col], coordinates)) {
+          else if (shouldPromote(board[newMove.from.row][newMove.from.col], coordinates, gameMode)) {
             newMove.needPromote = true;
             newMove.promotes = true;
           }
@@ -101,14 +97,15 @@ export const getSortedMoves = (
   moves: Move[]
 ): Move[] => {
   return moves.sort((a, b) => {
-    return heuristicScore(b, game.board, game.currentPlayer) - heuristicScore(a, game.board, game.currentPlayer);
+    return heuristicScore(b, game.board, game.currentPlayer, game.gameMode) - heuristicScore(a, game.board, game.currentPlayer, game.gameMode);
   });
 }
 
 const heuristicScore = (
   move: Move, 
   board: (Piece | null)[][], 
-  currentPlayer: PlayerColor
+  currentPlayer: PlayerColor,
+  gameMode: GameMode,
 ): number => {
   let score = 0;
   // 1. Взятие фигуры (чем ценнее фигура, тем лучше)
@@ -120,7 +117,7 @@ const heuristicScore = (
   // 2. Превращение фигуры (усиливает свою фигуру)
   if (move.promotes) score += 3;
   // 3. Близость к вражескому королю (атакующий ход)
-  const enemyKingPos = getEnemyKingPosition(board, getOpponent(currentPlayer));
+  const enemyKingPos = getEnemyKingPosition(board, getOpponent(currentPlayer), gameMode);
   if (enemyKingPos) {
     const distanceToKing = calculateDistanceToKing(move.to, enemyKingPos);
     score += (10 - distanceToKing);
@@ -131,10 +128,14 @@ const heuristicScore = (
 
 export const getEnemyKingPosition = (
   board: (Piece | null)[][], 
-  opponent: PlayerColor
+  opponent: PlayerColor,
+  gameMode: GameMode,
 ): Coordinates | null => {
-  for (let row = 0; row < 9; row++) {
-    for (let col = 0; col < 9; col++) {
+  let sizeBoard: number = 9;
+  if (gameMode === 'Limits') sizeBoard = 5;
+
+  for (let row = 0; row < sizeBoard; row++) {
+    for (let col = 0; col < sizeBoard; col++) {
       const piece = board[row][col];
       if (piece?.type === 'King' && piece?.color === opponent) return piece.position;
     }

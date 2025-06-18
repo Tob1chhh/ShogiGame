@@ -16,6 +16,7 @@ const ruPieceName = (type: PieceType, promoted: boolean): string => {
   if (type === 'King') return 'Король';
   if (type === 'Rook') return promoted ? 'Дракон' : 'Ладья';
   if (type === 'Bishop') return promoted ? 'Лошадь' : 'Слон';
+  if (type === 'Tengu') return promoted ? 'Перевернутый тенгу' : 'Тенгу';
   return '';
 }
 
@@ -27,7 +28,9 @@ export const GamePiece = ({ type, color, promoted, onClick }: Piece) => {
                         duration-200 hover:scale-110"
             onClick={onClick}
     >
-      { <img src={`${getPieceIcon(type, color, promoted)}`} alt="#" title={ruPieceName(type, promoted)} className="w-14 h-14" /> }
+      { <img src={`${getPieceIcon(type, color, promoted)}`} 
+             alt="#" title={ruPieceName(type, promoted)} 
+             className="w-14 h-14" /> }
     </button>
   );
 };

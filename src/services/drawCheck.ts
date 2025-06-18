@@ -1,9 +1,7 @@
 import { Piece } from "../store/game.types";
 
-const positionHistory: string[] = [];
-
 // Проверка ничьи при четырехкратном повторении 
-export const checkRepetitionDraw = (board: (Piece | null)[][]): boolean => {
+export const checkRepetitionDraw = (board: (Piece | null)[][], positionHistory: string[]): boolean => {
   const currentPos = boardToString(board);
   const occurrences = positionHistory.filter(pos => pos === currentPos).length;
   positionHistory.push(currentPos);
@@ -22,9 +20,10 @@ const boardToString = (board: (Piece | null)[][]): string => {
 // Проверка ничьи при наличии только королей у игроков или королей и 1 легкой фигуры
 export const checkInsufficientMaterial = (board: (Piece | null)[][]): boolean => {
   const pieces = {
-    Sente: { king: 0, others: 0 },
-    Gote: { king: 0, others: 0 }
+    Sente: { king: 0, lights: 0, strongs: 0 },
+    Gote: { king: 0, lights: 0, strongs: 0 }
   };
+  const strongPieces = ['Gold', 'Rook', 'Bishop'];
   const lightPieces = ['Pawn', 'Lance', 'Horse_Knight', 'Silver'];
 
   for (const row of board) {
@@ -32,13 +31,11 @@ export const checkInsufficientMaterial = (board: (Piece | null)[][]): boolean =>
       if (piece) {
         const side = piece.color;
         pieces[side].king += piece.type === 'King' ? 1 : 0;
-        pieces[side].others += lightPieces.includes(piece.type) ? 1 : 0;
+        pieces[side].lights += lightPieces.includes(piece.type) ? 1 : 0;
+        pieces[side].strongs += strongPieces.includes(piece.type) ? 1 : 0;
       }
     }
   }
   
-  return (
-    (pieces.Sente.others === 0 && pieces.Gote.others === 0) ||
-    (pieces.Sente.others <= 1 && pieces.Gote.others <= 1)
-  );
+  return (pieces.Sente.lights <= 1 && pieces.Gote.lights <= 1 && pieces.Sente.strongs === 0 && pieces.Gote.strongs === 0);
 };

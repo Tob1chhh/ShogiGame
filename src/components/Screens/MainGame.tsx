@@ -1,14 +1,17 @@
 import { useUnit } from "effector-react";
-import { $capturedPieces, $currentPlayer, openLearningModal, resetGame, selectCapturedPiece } from "../../store/game";
+import { $capturedPieces, $currentPlayer, $movesForPoints, openLearningModal, resetGame, selectCapturedPiece } from "../../store/game";
 import { switchMainStateScreen } from "../../store/screens";
 import { Board } from "../Board/Board";
 import { GamePiece } from "../Piece/Piece";
 import { ModalPromote } from "./ModalPromote";
 import { ModalResultGame } from "./ModalResultGame";
 import { ModalLearning } from "./ModalLearning";
+
 export const MainGame = () => {
   const currentPlayer = useUnit($currentPlayer);
   const capturedPieces = useUnit($capturedPieces);
+  const movesForPoints = useUnit($movesForPoints);
+
   return (
     <div className="flex justify-center items-center h-screen gap-16">
         {/* Левая панель с руками игроков */}
@@ -45,7 +48,8 @@ export const MainGame = () => {
         {/* Правая панель с кнопками */}
         <div className="flex justify-center items-center h-screen flex-col gap-8">
           <div className="w-[90%] max-w-4xl pl-2 pr-2 pt-8 pb-8 bg-orange-100 border-4 border-orange-900 rounded-3xl shadow-2xl">
-            <div className="flex justify-center items-center w-full h-full">
+            <div className="flex justify-center items-center w-full h-full flex-col">
+              {movesForPoints && <span className="text-center font-bold text-2xl mb-6">Ходов осталось: {movesForPoints}</span>}
               <span className="text-center font-bold text-2xl">Ход игрока: {currentPlayer === 'Sente' ? 'Сэнтэ ↑' : 'Готэ ↓'}</span>
             </div>
           </div>
