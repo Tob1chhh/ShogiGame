@@ -1,6 +1,7 @@
 import { GamePhase, GameState, Move, Piece, PlayerColor } from "../store/game.types";
 import { detectCheck } from "./calculateKingCheck";
 import { checkInsufficientMaterial, checkRepetitionDraw } from "./drawCheck";
+import { getPieceValue } from "./helpAILogic";
 
 //! Совершение хода в игре
 export const makeMove = (game: GameState, move: Move): GameState => {
@@ -12,14 +13,21 @@ export const makeMove = (game: GameState, move: Move): GameState => {
       move.selectedPiece.promoted = true;
     }
     if (move.capturedPiece) {
-      capturedPieceForHand = move.capturedPiece;
+      if (game.gameMode === 'Points') {
+        console.log(getPieceValue((move.capturedPiece.promoted ? 'Promoted' : '') + move.capturedPiece.type));
+        game.currentPlayer === 'Sente' ?
+          game.gamePoints!.Sente += getPieceValue((move.capturedPiece.promoted ? 'Promoted' : '') + move.capturedPiece.type) :
+          game.gamePoints!.Gote += getPieceValue((move.capturedPiece.promoted ? 'Promoted' : '') + move.capturedPiece.type);
+      }
+
+      capturedPieceForHand = JSON.parse(JSON.stringify(move.capturedPiece));
       if (capturedPieceForHand) {
         capturedPieceForHand.promoted = false;
         capturedPieceForHand.color = game.currentPlayer;
       }
-      game.currentPlayer === 'Sente' 
-        ? game.capturedPieces.Sente.push(capturedPieceForHand!) 
-        : game.capturedPieces.Gote.push(capturedPieceForHand!);
+      
+      if (game.currentPlayer === 'Sente') game.capturedPieces.Sente.push(capturedPieceForHand!);
+      else game.capturedPieces.Gote.push(capturedPieceForHand!);
     }
     updatedBoard[move.to.row][move.to.col] = move.selectedPiece;
     move.selectedPiece.position = { row: move.to.row, col: move.to.col };
@@ -35,26 +43,39 @@ export const makeMove = (game: GameState, move: Move): GameState => {
       game.capturedPieces.Gote.splice(resetPiece, 1);
     }
   }
-  // Проверка шаха, мата и ничьи
-  const newCheckState = detectCheck(updatedBoard, opponent, opponent === 'Sente' ? game.capturedPieces.Sente : game.capturedPieces.Gote); 
-  let phase: GamePhase = 'Normal';
-  if (checkInsufficientMaterial(updatedBoard) || 
-      checkRepetitionDraw(updatedBoard)) phase = 'Draw';
-  else if (!newCheckState) phase = 'Normal';
-  else if (newCheckState?.escapeMoves?.length === 0 && 
-            newCheckState?.blockMoves?.length === 0) phase = 'Checkmate';
-  else phase = 'Check';
-  
-  return {
-    ...game,
-    board: updatedBoard,
-    currentPlayer: opponent,
-    selectedPiece: null,
-    selectedHandPiece: null,
-    availableMoves: [],
-    checkState: newCheckState,
-    gamePhase: phase,
+  if (game.gameMode === 'Points') {
+    return {
+      ...game,
+      board: updatedBoard,
+      currentPlayer: opponent,
+      selectedPiece: null,
+      selectedHandPiece: null,
+      availableMoves: [],
+      movesForPoints: game.movesForPoints ? game.movesForPoints - 1 : null,
+    }
+  } else {
+    // Проверка шаха, мата и ничьи
+    const newCheckState = detectCheck(updatedBoard, opponent, opponent === 'Sente' ? game.capturedPieces.Sente : game.capturedPieces.Gote, game.gameMode); 
+    let phase: GamePhase = 'Normal';
+    if (checkInsufficientMaterial(updatedBoard) || 
+        checkRepetitionDraw(updatedBoard, game.positionHistory)) phase = 'Draw';
+    else if (!newCheckState) phase = 'Normal';
+    else if (newCheckState?.escapeMoves?.length === 0 && 
+              newCheckState?.blockMoves?.length === 0) phase = 'Checkmate';
+    else phase = 'Check';
+    
+    return {
+      ...game,
+      board: updatedBoard,
+      currentPlayer: opponent,
+      selectedPiece: null,
+      selectedHandPiece: null,
+      availableMoves: [],
+      checkState: newCheckState,
+      gamePhase: phase,
+    }
   }
+
 }
 
 export const getOpponent = (player: PlayerColor): PlayerColor => player === 'Sente' ? 'Gote' : 'Sente';

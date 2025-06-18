@@ -1,4 +1,6 @@
+import { openLearningModal } from '../../store/game';
 import { switchMainStateScreen } from '../../store/screens';
+import { ModalLearning } from './ModalLearning';
 
 export const MainScreen = () => {
   return (
@@ -22,7 +24,7 @@ export const MainScreen = () => {
             </button>
 
             <button
-              onClick={() => console.log('Обучение')}
+              onClick={() => openLearningModal()}
               className="relative group px-8 py-4 
                          w-60 h-20 max-w-64
                          text-3xl font-semibold text-white 
@@ -36,6 +38,7 @@ export const MainScreen = () => {
           </div>
         </div>
       </div>
+      <ModalLearning />
     </div>
   );
 };

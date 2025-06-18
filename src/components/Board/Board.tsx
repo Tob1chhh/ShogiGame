@@ -3,35 +3,48 @@ import { useUnit } from 'effector-react';
 import { 
   $availableMoves, $board, 
   $capturedPieces, $checkState, 
-  $currentPlayer, $gameState, $selectedHandPiece, 
+  $currentPlayer, $gameMode, $gameState, 
+  $movesForPoints, $selectedHandPiece, 
   $selectedPiece, movePiece, 
-  openModal, resetGame, 
-  selectCapturedPiece, selectNullCell
+  openModal, selectNullCell,
 } from '../../store/game';
-import { switchMainStateScreen } from '../../store/screens';
 import { selectPiece } from '../../store/game';
-import { CellProps, GameState, Move } from '../../store/game.types';
+import { CellProps, GameMode, GameState, Move } from '../../store/game.types';
 import { promptPromotion, shouldPromote } from '../../services/calculateMoves';
 import { GamePiece } from '../Piece/Piece';
-import { ModalPromote } from '../Screens/ModalPromote';
-import { ModalResultGame } from '../Screens/ModalResultGame';
 import { easyAILogic, hardAILogic } from '../../services/serviceAILogic';
 import { getOpponent, simulateMove } from '../../services/helpGameLogic';
 import { getAllPieces, getAllPossibleMoves } from '../../services/helpAILogic';
+
+const ruGameMode = (gameMode: GameMode): string => {
+  if (gameMode === 'Classic') return 'Классическая игра';
+  else if (gameMode === 'Points') return 'Игра на набор очков';
+  else if (gameMode === 'Limits') return 'Игра с ограничениями';
+  else return 'Игра с новой фигурой';
+}
 
 export const Board = () => {
   const game = useUnit($gameState);
   const board = useUnit($board);
   const availableMoves = useUnit($availableMoves);
   const currentPlayer = useUnit($currentPlayer);
-  const capturedPieces = useUnit($capturedPieces);
   const checkState = useUnit($checkState);
+  const gameMode = useUnit($gameMode);
+  const movesForPoints = useUnit($movesForPoints);
 
   useEffect(() => {
-    if (game.gamePhase === 'Checkmate')
+    if (movesForPoints !== null && movesForPoints === 0) {
+      openModal(`
+        Игра окончена!\nИтоговые очки:\nГотэ - ${game.gamePoints?.Gote} || Сэнтэ - ${game.gamePoints?.Sente}\n
+        Итог: ${game.gamePoints!.Gote == game.gamePoints!.Sente ? 'Ничья' : 
+                game.gamePoints!.Gote > game.gamePoints!.Sente ? 'Победитель - Готэ ↓' : 'Победитель - Сэнтэ ↑'}
+      `);
+    }
+
+    if (game.gamePhase === 'Checkmate' && gameMode !== 'Points')
       openModal(`Игра окончена!\nПобедитель: ${currentPlayer === 'Sente' ? 'Готэ ↓' : 'Сэнтэ ↑'}`);
 
-    if (game.gamePhase === 'Draw')
+    if (game.gamePhase === 'Draw' && gameMode !== 'Points')
       openModal(`Игра окончена!\nОбъявлена ничья!`);
   }, [game]);
 
@@ -45,47 +58,25 @@ export const Board = () => {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen gap-16">
-
-      {/* Левая панель с руками игроков */}
-      <div className="flex flex-col justify-between h-[540px]">
-        <div className="flex flex-col justify-center items-center">
-          <span className="hand_players__title">Рука игрока 'Готэ'</span>
-          <div className="w-80 h-48 bg-white border-2 border-gray-400 rounded-md flex items-center justify-center shadow-md player_hand">
-            {capturedPieces.Gote.map((piece) => (
-              <GamePiece type={piece.type}
-                         color={piece.color}
-                         position={piece.position}
-                         promoted={piece.promoted}
-                         onClick={() => { if (piece.color === currentPlayer) selectCapturedPiece(piece) }}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-col justify-center items-center">
-          <span className="hand_players__title">Рука игрока 'Сэнтэ'</span>
-          <div className="w-80 h-48 bg-white border-2 border-gray-400 rounded-md flex items-center justify-center shadow-md player_hand">
-            {capturedPieces.Sente.map((piece) => (
-              <GamePiece type={piece.type}
-                         color={piece.color}
-                         position={piece.position}
-                         promoted={piece.promoted}
-                         onClick={() => { if (piece.color === currentPlayer) selectCapturedPiece(piece) }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Игровая доска */}
-      <div className="grid grid-cols-9 border-2 border-orange-900">
+    <div className="flex flex-col items-center">
+      <div className={`flex flex-row ${game.movesForPoints ? 'justify-between' : 'justify-center'} items-center mb-6`}>
+        { game.movesForPoints && <span className="font-bold text-xl pt-4">Очки Готэ: {game.gamePoints?.Gote}</span> }
+        <span className="text-center font-bold text-2xl mx-10">Режим: {ruGameMode(gameMode)}</span> 
+        { game.movesForPoints && <span className="font-bold text-xl pt-4">Очки Сэнтэ: {game.gamePoints?.Sente}</span> }
+      </div> 
+      <div className={`grid ${gameMode === 'Limits' ? "grid-cols-5" : "grid-cols-9"} border-2 border-orange-900`}>
         {board.map((row, rowIndex) => 
           row.map((piece, colIndex) => {
             return (
               <Cell row={piece ? piece.position.row : rowIndex}
                     col={piece ? piece.position.col : colIndex}
                     isHighlighted={availableMoves.some(move => move.row === rowIndex && move.col === colIndex)}
-                    isCheck={getCellState(piece ? piece.position.row : rowIndex, piece ? piece.position.col : colIndex) === 'king-in-check' && piece?.type === 'King'}
+                    isCheck={
+                      getCellState(
+                        piece ? piece.position.row : rowIndex, 
+                        piece ? piece.position.col : colIndex
+                      ) === 'king-in-check' && piece?.type === 'King'
+                    }
                     piece={
                       piece === null ? null
                       : <GamePiece
@@ -101,45 +92,6 @@ export const Board = () => {
           })
         )}
       </div>
-
-      {/* Правая панель с кнопками */}
-      <div className="flex justify-center items-center h-screen flex-col gap-8">
-        <div className="w-[90%] max-w-4xl pl-2 pr-2 pt-8 pb-8 bg-orange-100 border-4 border-orange-900 rounded-3xl shadow-2xl">
-          <div className="flex justify-center items-center w-full h-full">
-            <span className="text-center font-bold text-2xl">Ход игрока: {currentPlayer === 'Sente' ? 'Сэнтэ ↑' : 'Готэ ↓'}</span>
-          </div>
-        </div>
-        <div className="w-[90%] max-w-4xl p-12 bg-orange-100 border-4 border-orange-900 rounded-3xl shadow-2xl">
-          <div className="flex flex-col justify-center items-center gap-8">
-            <button className="w-56 h-12 bg-green-600 text-white font-bold rounded-md shadow-md 
-                              hover:bg-green-700 transition duration-300"
-            >
-              Сохранить
-            </button>
-            <button className="w-56 h-12 bg-green-600 text-white font-bold rounded-md shadow-md 
-                              hover:bg-green-700 transition duration-300"
-            >
-              Загрузить
-            </button>
-            <button className="w-56 h-12 bg-green-600 text-white font-bold rounded-md shadow-md 
-                              hover:bg-green-700 transition duration-300"
-            >
-              Обучение
-            </button>
-            <button className="w-56 h-12 bg-green-600 text-white font-bold rounded-md shadow-md 
-                              hover:bg-green-700 transition duration-300"
-                    onClick={() => {
-                      resetGame();
-                      switchMainStateScreen('startScreen');
-                    }}
-            >
-              Главное меню
-            </button>
-          </div>
-        </div>
-      </div>
-      <ModalPromote />
-      <ModalResultGame />
     </div>
   );
 };
@@ -151,6 +103,7 @@ const Cell = React.memo(({ row, col, isHighlighted, isCheck, piece }: CellProps)
   const capturedPieces = useUnit($capturedPieces);
   const selectedPiece = useUnit($selectedPiece);
   const selectedHandPiece = useUnit($selectedHandPiece);
+  const gameMode = useUnit($gameMode);
 
   const onClick = async () => {
     if (piece === null) selectNullCell();
@@ -169,14 +122,17 @@ const Cell = React.memo(({ row, col, isHighlighted, isCheck, piece }: CellProps)
         if (simulateMove(game, newMove).checkState) 
           newMove.setCheck = true;
 
+        let sizeBoardZero: number[] = [8, 7];
+        if (gameMode === 'Limits') sizeBoardZero = [4, 3];
+
         if (
-          ((newMove.selectedPiece?.type === 'Pawn' || newMove.selectedPiece?.type === 'Lance') && (row === 8 || row === 0)) 
-          || (newMove.selectedPiece?.type === 'Horse_Knight' && (row === 8 || row === 7 || row === 1 || row === 0))
+          ((newMove.selectedPiece?.type === 'Pawn' || newMove.selectedPiece?.type === 'Lance') && (row === sizeBoardZero[0] || row === 0)) 
+          || (newMove.selectedPiece?.type === 'Horse_Knight' && (row === sizeBoardZero[0] || row === sizeBoardZero[1] || row === 1 || row === 0))
         ) {
           newMove.needPromote = true;
           newMove.promotes = true;
         }
-        else if (shouldPromote(board[newMove.from.row][newMove.from.col], { row: row, col: col })) {
+        else if (shouldPromote(board[newMove.from.row][newMove.from.col], { row: row, col: col }, gameMode)) {
           const shouldPromote = await promptPromotion();
           if (shouldPromote) {
             newMove.needPromote = shouldPromote;
@@ -199,14 +155,15 @@ const Cell = React.memo(({ row, col, isHighlighted, isCheck, piece }: CellProps)
             getAllPieces(currentState.board, currentState.currentPlayer),
             currentState.currentPlayer === 'Gote' ? currentState.capturedPieces.Gote : currentState.capturedPieces.Sente,
             currentState.board, 
-            currentState.checkState
+            currentState.checkState,
+            currentState.gameMode
       ).length === 0) openModal(`Игра окончена!\nХодов не осталось!\n
         Победитель: ${getOpponent(currentState.currentPlayer) === 'Gote' ? 'Готэ ↓' : 'Сэнтэ ↑'}`);
       if (currentState.currentPlayer === 'Gote' && currentState.aiLevel) {
         setTimeout(() => {
           const aiMove = currentState.aiLevel === 'Easy' ? 
             easyAILogic(currentState) : 
-            hardAILogic(currentState, 'Gote', 3);
+            hardAILogic(currentState, 'Gote', 4);
           if (aiMove) movePiece(aiMove);
           else openModal(`Игра окончена!\nХодов не осталось!\nПобедитель: 'Сэнтэ ↑'`);
         }, 1000);

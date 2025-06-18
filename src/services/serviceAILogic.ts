@@ -1,6 +1,4 @@
-// TODO: реализовать логику игры сложного уровня ИИ
-
-import { GameState, Move, Piece, PlayerColor } from "../store/game.types"
+import { GameMode, GameState, Move, Piece, PlayerColor } from "../store/game.types"
 import { getAllPieces, getAllPossibleMoves, getPieceValue, getSortedMoves } from "./helpAILogic";
 import { getOpponent, simulateMove } from "./helpGameLogic";
 
@@ -12,7 +10,7 @@ export const easyAILogic = (
     // Получаем все фигуры, доступные ИИ
     const availableAIPieces: Piece[] = getAllPieces(game.board, 'Gote');
     // Получаем все доступные ходы для всех фигур доступных ИИ
-    const allPossibleAIMoves: Move[] = getAllPossibleMoves(availableAIPieces, game.capturedPieces.Gote, game.board, game.checkState);
+    const allPossibleAIMoves: Move[] = getAllPossibleMoves(availableAIPieces, game.capturedPieces.Gote, game.board, game.checkState, game.gameMode);
     // Выбирается случайный ход
     if (allPossibleAIMoves.length > 0) return allPossibleAIMoves[Math.floor(Math.random() * allPossibleAIMoves.length)];
   }
@@ -24,12 +22,17 @@ export const easyAILogic = (
 // Оценочная функция (чем выше, тем лучше для `maximizingPlayer`)
 const evaluate = (
   board: (Piece | null)[][], 
-  currentPlayer: PlayerColor
+  currentPlayer: PlayerColor,
+  gameMode: GameMode,
 ): number => {
   let score = 0;
+
+  let sizeBoard: number = 9;
+  if (gameMode === 'Limits') sizeBoard = 5;
+
   // Материал (фигуры на доске + резерв)
-  for (let row = 0; row < 9; row++) {
-    for (let col = 0; col < 9; col++) {
+  for (let row = 0; row < sizeBoard; row++) {
+    for (let col = 0; col < sizeBoard; col++) {
       const piece = board[row][col];
       if (!piece) continue;
 
@@ -59,7 +62,8 @@ const minimaxWithAlphaBeta = (
     return evaluate(
       game.board, maximizingPlayer 
       ? game.currentPlayer 
-      : getOpponent(game.currentPlayer)
+      : getOpponent(game.currentPlayer),
+      game.gameMode
     );
   }
 
@@ -67,7 +71,8 @@ const minimaxWithAlphaBeta = (
     getAllPieces(game.board, game.currentPlayer),
     game.currentPlayer === 'Gote' ? game.capturedPieces.Gote : game.capturedPieces.Sente,
     game.board, 
-    game.checkState
+    game.checkState,
+    game.gameMode
   );
   const sortedMoves = getSortedMoves(game, moves);
   const bestSortedMoves = sortedMoves.filter((move) => move.capturedPiece || move.setCheck);
@@ -115,13 +120,14 @@ const minimaxWithAlphaBeta = (
 export const hardAILogic = (
   game: GameState,
   currentPlayer: PlayerColor,
-  depth: number = 3
+  depth: number
 ): Move | null => {
   const moves: Move[] = getAllPossibleMoves(
     getAllPieces(game.board, 'Gote'),
     currentPlayer === 'Gote' ? game.capturedPieces.Gote : game.capturedPieces.Sente,
     game.board, 
-    game.checkState
+    game.checkState,
+    game.gameMode
   );
   const sortedMoves = getSortedMoves(game, moves);
 
@@ -130,8 +136,6 @@ export const hardAILogic = (
   const bestSortedMoves = sortedMoves.filter((move) => move.capturedPiece || move.setCheck);
   let bestMove = bestSortedMoves.length !== 0 ? bestSortedMoves[0] : sortedMoves[Math.floor(Math.random() * sortedMoves.length)];
   let bestValue = -Infinity;
-
-  console.log(bestSortedMoves);
 
   if (bestSortedMoves.length !== 0) {
     for (const move of bestSortedMoves) {

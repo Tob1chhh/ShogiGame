@@ -9,6 +9,7 @@ export const pieces: Record<string, string | null> = {
   Gote_Rook: pieces_all.Gote_Rook,
   Gote_Bishop: pieces_all.Gote_Bishop,
   Gote_Pawn: pieces_all.Gote_Pawn,
+  Gote_Tengu: pieces_all.Gote_Tengu,
   Sente_Lance: pieces_all.Sente_Lance,
   Sente_Horse_Knight: pieces_all.Sente_Horse_Knight,
   Sente_Silver: pieces_all.Sente_Silver,
@@ -17,6 +18,7 @@ export const pieces: Record<string, string | null> = {
   Sente_Rook: pieces_all.Sente_Rook,
   Sente_Bishop: pieces_all.Sente_Bishop,
   Sente_Pawn: pieces_all.Sente_Pawn,
+  Sente_Tengu: pieces_all.Sente_Tengu,
 
   Gote_Pawn_Reverse: pieces_all.Gote_Pawn_Reverse,
   Gote_Lance_Reverse: pieces_all.Gote_Lance_Reverse,
@@ -24,6 +26,7 @@ export const pieces: Record<string, string | null> = {
   Gote_Silver_Reverse: pieces_all.Gote_Silver_Reverse,
   Gote_Rook_Reverse: pieces_all.Gote_Rook_Reverse,
   Gote_Bishop_Reverse: pieces_all.Gote_Bishop_Reverse,
+  Gote_Tengu_Reverse: pieces_all.Gote_Tengu_Reverse,
 
   Sente_Pawn_Reverse: pieces_all.Sente_Pawn_Reverse,
   Sente_Lance_Reverse: pieces_all.Sente_Lance_Reverse,
@@ -31,6 +34,7 @@ export const pieces: Record<string, string | null> = {
   Sente_Silver_Reverse: pieces_all.Sente_Silver_Reverse,
   Sente_Rook_Reverse: pieces_all.Sente_Rook_Reverse,
   Sente_Bishop_Reverse: pieces_all.Sente_Bishop_Reverse,
+  Sente_Tengu_Reverse: pieces_all.Sente_Tengu_Reverse,
 
   Empty: null,
 }
